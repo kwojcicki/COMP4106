@@ -4,12 +4,18 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
 import java.util.Set;
+import java.util.Stack;
 
 
 public class Game {
 
 	public static void main(String[] args) {
-		//bfs();
+		bfs();
+		dfs();
+		//test();
+	}
+
+	private static void test() {
 		State s = new State();
 		s.printBoard();
 
@@ -17,8 +23,16 @@ public class Game {
 		for(Move m: moves) {
 			System.out.println(m.t1 + " " + m.t2);
 		}
-	}
 
+		s = s.performMove(moves.get(2));
+		s.printBoard();
+
+		moves = s.possibleMoves();
+		for(Move m: moves) {
+			System.out.println(m.t1 + " " + m.t2);
+		}
+	}
+	
 	private static final Set<Tuple> validPositions = new HashSet<>();
 	static {
 		validPositions.add(new Tuple(0, 2));
@@ -66,6 +80,30 @@ public class Game {
 		validPositions.add(new Tuple(6, 4));
 	}
 
+	private static void dfs() {
+		State original = new State();
+		Stack<State> states = new Stack<>();
+		
+		states.add(original);
+		
+		while(!states.isEmpty()) {
+			State e = states.pop();
+			List<Move> moves = e.possibleMoves();
+			for(Move m: moves) {
+				State post = e.performMove(m);
+				if(post.goal()) {
+					post.printBoard();
+					post.printMoves();
+					System.out.println("Complete");
+					return;
+				}
+				states.push(post);
+			}
+		}
+		
+		System.out.println("No possible solutions");
+	}
+	
 	private static void bfs() {
 		State original = new State();
 		Queue<State> states = new LinkedList<>();
@@ -78,12 +116,16 @@ public class Game {
 			for(Move m: moves) {
 				State post = e.performMove(m);
 				if(post.goal()) {
+					post.printBoard();
+					post.printMoves();
 					System.out.println("Complete");
 					return;
 				}
 				states.add(post);
 			}
 		}
+		
+		System.out.println("No possible solutions");
 	}
 
 	public static class Move {
@@ -97,15 +139,25 @@ public class Game {
 			this.t2 = t2;
 			this.result = result;
 		}
+		
+		@Override
+		public String toString() {
+			return t1 + " " + t2;
+		}
 	}
 
 	public static class State {
 		private Set<Tuple> rocks = new HashSet<>();
+		private List<Move> moves = new ArrayList<>(38); 
 
+		public void printMoves() {
+			System.out.println(moves);
+			System.out.println(moves.size());
+		}
+		
 		public void printBoard() {
 			for(int i = 0; i < 7; i++) {
 				for(int j = 0;j < 7; j++) {
-
 					if(rocks.contains(new Tuple(i, j))) {
 						System.out.print("X");		
 					} else if (validPositions.contains(new Tuple(i, j))) {
@@ -113,65 +165,93 @@ public class Game {
 					} else {
 						System.out.print(" ");
 					}
-
 				}
 				System.out.println();
 			}
 		}
 
 		public State() {
-			rocks.add(new Tuple(0, 2));
-			rocks.add(new Tuple(0, 3));
-			rocks.add(new Tuple(0, 4));
+			boolean fullBoard = false;
+			if(fullBoard) {
+				rocks.add(new Tuple(0, 2));
+				rocks.add(new Tuple(0, 3));
+				rocks.add(new Tuple(0, 4));
 
-			rocks.add(new Tuple(1, 1));
-			rocks.add(new Tuple(1, 2));
-			rocks.add(new Tuple(1, 3));
-			rocks.add(new Tuple(1, 4));
-			rocks.add(new Tuple(1, 5));
+				rocks.add(new Tuple(1, 1));
+				rocks.add(new Tuple(1, 2));
+				rocks.add(new Tuple(1, 3));
+				rocks.add(new Tuple(1, 4));
+				rocks.add(new Tuple(1, 5));
 
-			rocks.add(new Tuple(2, 0));
-			rocks.add(new Tuple(2, 1));
-			rocks.add(new Tuple(2, 2));
-			// rocks.add(new Tuple(2, 3));
-			rocks.add(new Tuple(2, 4));
-			rocks.add(new Tuple(2, 5));
-			rocks.add(new Tuple(2, 6));
+				rocks.add(new Tuple(2, 0));
+				rocks.add(new Tuple(2, 1));
+				rocks.add(new Tuple(2, 2));
+				// rocks.add(new Tuple(2, 3));
+				rocks.add(new Tuple(2, 4));
+				rocks.add(new Tuple(2, 5));
+				rocks.add(new Tuple(2, 6));
 
-			rocks.add(new Tuple(3, 0));
-			rocks.add(new Tuple(3, 1));
-			rocks.add(new Tuple(3, 2));
-			rocks.add(new Tuple(3, 3));
-			rocks.add(new Tuple(3, 4));
-			rocks.add(new Tuple(3, 5));
-			rocks.add(new Tuple(3, 6));
+				rocks.add(new Tuple(3, 0));
+				rocks.add(new Tuple(3, 1));
+				rocks.add(new Tuple(3, 2));
+				rocks.add(new Tuple(3, 3));
+				rocks.add(new Tuple(3, 4));
+				rocks.add(new Tuple(3, 5));
+				rocks.add(new Tuple(3, 6));
 
-			rocks.add(new Tuple(4, 0));
-			rocks.add(new Tuple(4, 1));
-			rocks.add(new Tuple(4, 2));
-			rocks.add(new Tuple(4, 3));
-			rocks.add(new Tuple(4, 4));
-			rocks.add(new Tuple(4, 5));
-			rocks.add(new Tuple(4, 6));
+				rocks.add(new Tuple(4, 0));
+				rocks.add(new Tuple(4, 1));
+				rocks.add(new Tuple(4, 2));
+				rocks.add(new Tuple(4, 3));
+				rocks.add(new Tuple(4, 4));
+				rocks.add(new Tuple(4, 5));
+				rocks.add(new Tuple(4, 6));
 
-			rocks.add(new Tuple(5, 1));
-			rocks.add(new Tuple(5, 2));
-			rocks.add(new Tuple(5, 3));
-			rocks.add(new Tuple(5, 4));
-			rocks.add(new Tuple(5, 5));
+				rocks.add(new Tuple(5, 1));
+				rocks.add(new Tuple(5, 2));
+				rocks.add(new Tuple(5, 3));
+				rocks.add(new Tuple(5, 4));
+				rocks.add(new Tuple(5, 5));
 
-			rocks.add(new Tuple(6, 2));
-			rocks.add(new Tuple(6, 3));
-			rocks.add(new Tuple(6, 4));
+				rocks.add(new Tuple(6, 2));
+				rocks.add(new Tuple(6, 3));
+				rocks.add(new Tuple(6, 4));
+			} else {
+				rocks.add(new Tuple(1, 5));
+
+				rocks.add(new Tuple(2, 0));
+				rocks.add(new Tuple(2, 1));
+				rocks.add(new Tuple(2, 4));
+
+				rocks.add(new Tuple(3, 0));
+				rocks.add(new Tuple(3, 1));
+				rocks.add(new Tuple(3, 2));
+				rocks.add(new Tuple(3, 4));
+
+				rocks.add(new Tuple(4, 0));
+				rocks.add(new Tuple(4, 3));
+				rocks.add(new Tuple(4, 4));
+
+				rocks.add(new Tuple(5, 4));
+				rocks.add(new Tuple(5, 5));
+
+				rocks.add(new Tuple(6, 4));
+				
+			}
 		}
 
 		public State(State s) {
-			// TODO: copy
+			for(Tuple t: s.rocks) {
+				this.rocks.add(new Tuple(t.x, t.y));
+			}
+			for(Move m: s.moves) {
+				this.moves.add(m);
+			}
 		}
 
 		public State performMove(Move m) {
-			State newState = new State();
-			newState.rocks = new HashSet<>();
+			State newState = new State(this);
+			newState.moves.add(m);
 			newState.rocks.remove(m.t2);
 
 			Tuple rockToChange = null;
@@ -185,7 +265,8 @@ public class Game {
 
 			newState.rocks.remove(rockToChange);
 
-			rockToChange.x = 2; // TODO:
+			rockToChange.x = m.result.x;
+			rockToChange.y = m.result.y;
 
 			newState.rocks.add(rockToChange);
 
@@ -193,8 +274,8 @@ public class Game {
 		}
 
 		public boolean goal() {
-			// TODO:
-			return false;
+			return rocks.size() == 1 && 
+					rocks.contains(new Tuple(1, 3));
 		}
 
 		public List<Move> possibleMoves(){
@@ -265,7 +346,7 @@ public class Game {
 			if (getClass() != obj.getClass())
 				return false;
 			Tuple other = (Tuple) obj;
-			if (x!= other.x || y != other.y) {
+			if (x != other.x || y != other.y) {
 				return false;
 			}
 			return true;
