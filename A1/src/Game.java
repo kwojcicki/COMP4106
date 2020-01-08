@@ -5,14 +5,42 @@ import java.util.List;
 import java.util.Queue;
 import java.util.Set;
 import java.util.Stack;
+import java.util.stream.IntStream;
 
 
 public class Game {
 
+	static List<Integer> p = new ArrayList<Integer>();
 	public static void main(String[] args) {
-		bfs();
-		dfs();
+		//dfs();
+		//bfs();
 		//test();
+
+		IntStream.range(0, 10).forEach(p::add);
+		permutations(new ArrayList<Integer>(), 4);
+		System.out.println(amount);
+		System.out.println(total);
+	}
+	
+	private static int amount = 0;
+	private static int total = 0;
+	public static void permutations(List<Integer> current, int n) {
+		
+		if(n == 0) {
+			final boolean flag = (current.get(0) != 0 || current.get(1) != 0);
+			System.out.println(current + " " + flag);
+			if(current.get(0) != 0 || current.get(1) != 0) {
+				amount++;
+			}
+			total++;
+			return;
+		}
+		
+		for(Integer a: p) {
+			current.add(a);
+			permutations(current, n - 1);
+			current.remove(a);
+		}
 	}
 
 	private static void test() {
@@ -32,52 +60,53 @@ public class Game {
 			System.out.println(m.t1 + " " + m.t2);
 		}
 	}
-	
-	private static final Set<Tuple> validPositions = new HashSet<>();
+
+	private static final boolean FULLBOARD = true;
+	private static final Set<Tuple> VALID_POSITIONS = new HashSet<>();
 	static {
-		validPositions.add(new Tuple(0, 2));
-		validPositions.add(new Tuple(0, 3));
-		validPositions.add(new Tuple(0, 4));
+		VALID_POSITIONS.add(new Tuple(0, 2));
+		VALID_POSITIONS.add(new Tuple(0, 3));
+		VALID_POSITIONS.add(new Tuple(0, 4));
 
-		validPositions.add(new Tuple(1, 1));
-		validPositions.add(new Tuple(1, 2));
-		validPositions.add(new Tuple(1, 3));
-		validPositions.add(new Tuple(1, 4));
-		validPositions.add(new Tuple(1, 5));
+		VALID_POSITIONS.add(new Tuple(1, 1));
+		VALID_POSITIONS.add(new Tuple(1, 2));
+		VALID_POSITIONS.add(new Tuple(1, 3));
+		VALID_POSITIONS.add(new Tuple(1, 4));
+		VALID_POSITIONS.add(new Tuple(1, 5));
 
-		validPositions.add(new Tuple(2, 0));
-		validPositions.add(new Tuple(2, 1));
-		validPositions.add(new Tuple(2, 2));
-		validPositions.add(new Tuple(2, 3));
-		validPositions.add(new Tuple(2, 4));
-		validPositions.add(new Tuple(2, 5));
-		validPositions.add(new Tuple(2, 6));
+		VALID_POSITIONS.add(new Tuple(2, 0));
+		VALID_POSITIONS.add(new Tuple(2, 1));
+		VALID_POSITIONS.add(new Tuple(2, 2));
+		VALID_POSITIONS.add(new Tuple(2, 3));
+		VALID_POSITIONS.add(new Tuple(2, 4));
+		VALID_POSITIONS.add(new Tuple(2, 5));
+		VALID_POSITIONS.add(new Tuple(2, 6));
 
-		validPositions.add(new Tuple(3, 0));
-		validPositions.add(new Tuple(3, 1));
-		validPositions.add(new Tuple(3, 2));
-		validPositions.add(new Tuple(3, 3));
-		validPositions.add(new Tuple(3, 4));
-		validPositions.add(new Tuple(3, 5));
-		validPositions.add(new Tuple(3, 6));
+		VALID_POSITIONS.add(new Tuple(3, 0));
+		VALID_POSITIONS.add(new Tuple(3, 1));
+		VALID_POSITIONS.add(new Tuple(3, 2));
+		VALID_POSITIONS.add(new Tuple(3, 3));
+		VALID_POSITIONS.add(new Tuple(3, 4));
+		VALID_POSITIONS.add(new Tuple(3, 5));
+		VALID_POSITIONS.add(new Tuple(3, 6));
 
-		validPositions.add(new Tuple(4, 0));
-		validPositions.add(new Tuple(4, 1));
-		validPositions.add(new Tuple(4, 2));
-		validPositions.add(new Tuple(4, 3));
-		validPositions.add(new Tuple(4, 4));
-		validPositions.add(new Tuple(4, 5));
-		validPositions.add(new Tuple(4, 6));
+		VALID_POSITIONS.add(new Tuple(4, 0));
+		VALID_POSITIONS.add(new Tuple(4, 1));
+		VALID_POSITIONS.add(new Tuple(4, 2));
+		VALID_POSITIONS.add(new Tuple(4, 3));
+		VALID_POSITIONS.add(new Tuple(4, 4));
+		VALID_POSITIONS.add(new Tuple(4, 5));
+		VALID_POSITIONS.add(new Tuple(4, 6));
 
-		validPositions.add(new Tuple(5, 1));
-		validPositions.add(new Tuple(5, 2));
-		validPositions.add(new Tuple(5, 3));
-		validPositions.add(new Tuple(5, 4));
-		validPositions.add(new Tuple(5, 5));
+		VALID_POSITIONS.add(new Tuple(5, 1));
+		VALID_POSITIONS.add(new Tuple(5, 2));
+		VALID_POSITIONS.add(new Tuple(5, 3));
+		VALID_POSITIONS.add(new Tuple(5, 4));
+		VALID_POSITIONS.add(new Tuple(5, 5));
 
-		validPositions.add(new Tuple(6, 2));
-		validPositions.add(new Tuple(6, 3));
-		validPositions.add(new Tuple(6, 4));
+		VALID_POSITIONS.add(new Tuple(6, 2));
+		VALID_POSITIONS.add(new Tuple(6, 3));
+		VALID_POSITIONS.add(new Tuple(6, 4));
 	}
 
 	private static void dfs() {
@@ -160,7 +189,7 @@ public class Game {
 				for(int j = 0;j < 7; j++) {
 					if(rocks.contains(new Tuple(i, j))) {
 						System.out.print("X");		
-					} else if (validPositions.contains(new Tuple(i, j))) {
+					} else if (VALID_POSITIONS.contains(new Tuple(i, j))) {
 						System.out.print("_");
 					} else {
 						System.out.print(" ");
@@ -171,8 +200,7 @@ public class Game {
 		}
 
 		public State() {
-			boolean fullBoard = false;
-			if(fullBoard) {
+			if(FULLBOARD) {
 				rocks.add(new Tuple(0, 2));
 				rocks.add(new Tuple(0, 3));
 				rocks.add(new Tuple(0, 4));
@@ -285,25 +313,25 @@ public class Game {
 				for(Tuple rock2: rocks) {
 					if(rock1.x + 1 == rock2.x && 
 							rock1.y == rock2.y && 
-							validPositions.contains(new Tuple(rock1.x + 2, rock1.y))
+							VALID_POSITIONS.contains(new Tuple(rock1.x + 2, rock1.y))
 							&& !rocks.contains(new Tuple(rock1.x + 2, rock1.y))) {
 						moves.add(new Move(rock1, rock2, new Tuple(rock1.x + 2, rock1.y)));
 					}
 					if(rock1.y + 1 == rock2.y && 
 							rock1.x == rock2.x && 
-							validPositions.contains(new Tuple(rock1.x, rock1.y + 2))
+							VALID_POSITIONS.contains(new Tuple(rock1.x, rock1.y + 2))
 							&& !rocks.contains(new Tuple(rock1.x, rock1.y + 2))) {
 						moves.add(new Move(rock1, rock2, new Tuple(rock1.x, rock1.y + 2)));
 					}
 					if(rock1.y - 1 == rock2.y && 
 							rock1.x == rock2.x && 
-							validPositions.contains(new Tuple(rock1.x, rock1.y - 2))
+							VALID_POSITIONS.contains(new Tuple(rock1.x, rock1.y - 2))
 							&& !rocks.contains(new Tuple(rock1.x, rock1.y - 2))) {
 						moves.add(new Move(rock1, rock2, new Tuple(rock1.x, rock1.y - 2)));
 					}
 					if(rock1.x - 1 == rock2.x && 
 							rock1.y == rock2.y && 
-							validPositions.contains(new Tuple(rock1.x - 2, rock1.y))
+							VALID_POSITIONS.contains(new Tuple(rock1.x - 2, rock1.y))
 							&& !rocks.contains(new Tuple(rock1.x - 2, rock1.y))) {
 						moves.add(new Move(rock1, rock2, new Tuple(rock1.x - 2, rock1.y)));
 					}
