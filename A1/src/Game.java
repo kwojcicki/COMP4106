@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Queue;
 import java.util.Set;
 import java.util.Stack;
+import java.util.function.Function;
 import java.util.stream.IntStream;
 
 
@@ -13,34 +14,8 @@ public class Game {
 	static List<Integer> p = new ArrayList<Integer>();
 	public static void main(String[] args) {
 		//dfs();
-		//bfs();
+		bfs();
 		//test();
-
-		IntStream.range(0, 10).forEach(p::add);
-		permutations(new ArrayList<Integer>(), 4);
-		System.out.println(amount);
-		System.out.println(total);
-	}
-	
-	private static int amount = 0;
-	private static int total = 0;
-	public static void permutations(List<Integer> current, int n) {
-		
-		if(n == 0) {
-			final boolean flag = (current.get(0) != 0 || current.get(1) != 0);
-			System.out.println(current + " " + flag);
-			if(current.get(0) != 0 || current.get(1) != 0) {
-				amount++;
-			}
-			total++;
-			return;
-		}
-		
-		for(Integer a: p) {
-			current.add(a);
-			permutations(current, n - 1);
-			current.remove(a);
-		}
 	}
 
 	private static void test() {
@@ -61,7 +36,7 @@ public class Game {
 		}
 	}
 
-	private static final boolean FULLBOARD = true;
+	private static final boolean FULLBOARD = false;
 	private static final Set<Tuple> VALID_POSITIONS = new HashSet<>();
 	static {
 		VALID_POSITIONS.add(new Tuple(0, 2));
@@ -112,9 +87,9 @@ public class Game {
 	private static void dfs() {
 		State original = new State();
 		Stack<State> states = new Stack<>();
-		
+
 		states.add(original);
-		
+
 		while(!states.isEmpty()) {
 			State e = states.pop();
 			List<Move> moves = e.possibleMoves();
@@ -129,15 +104,16 @@ public class Game {
 				states.push(post);
 			}
 		}
-		
+
 		System.out.println("No possible solutions");
 	}
-	
+
 	private static void bfs() {
 		State original = new State();
 		Queue<State> states = new LinkedList<>();
 
 		states.add(original);
+		original.printBoard();
 
 		while(!states.isEmpty()) {
 			State e = states.poll();
@@ -153,7 +129,7 @@ public class Game {
 				states.add(post);
 			}
 		}
-		
+
 		System.out.println("No possible solutions");
 	}
 
@@ -168,7 +144,7 @@ public class Game {
 			this.t2 = t2;
 			this.result = result;
 		}
-		
+
 		@Override
 		public String toString() {
 			return t1 + " " + t2;
@@ -183,7 +159,7 @@ public class Game {
 			System.out.println(moves);
 			System.out.println(moves.size());
 		}
-		
+
 		public void printBoard() {
 			for(int i = 0; i < 7; i++) {
 				for(int j = 0;j < 7; j++) {
@@ -264,7 +240,7 @@ public class Game {
 				rocks.add(new Tuple(5, 5));
 
 				rocks.add(new Tuple(6, 4));
-				
+
 			}
 		}
 
