@@ -1,15 +1,179 @@
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.PriorityQueue;
+import java.util.Queue;
 import java.util.Stack;
+import java.util.function.Function;
 
 public class A1 {
 
+	private static List<Move> mouseMoves;
+
 	public static void main(String[] args) {
-		// TODO Auto-generated method stub
+		State s = new State();
+		s.printBoard();
+		generateMouseMoves(s);
+
+		System.out.println("Mouse path: " + mouseMoves + " " + mouseMoves.size());
+
+		//dfs(s);
+		//bfs(s);
+
+		final Function<State, Double> heuristic1 = (state) -> {
+			return (Math.pow(state.mouse.x - state.cat.x, 2) +
+					Math.pow(state.mouse.y - state.cat.y, 2)); 
+		};
+		
+		final Function<State, Double> heuristic2 = (state) -> {
+			double distance = (Math.pow(state.mouse.x - state.cat.x, 2) +
+					Math.pow(state.mouse.y - state.cat.y, 2));
+
+			double catVelocity = Math.pow(2, 1) + Math.pow(1, 1);
+
+
+			if(state.turn + (int)(distance/catVelocity) >= mouseMoves.size()) {
+				return Double.MAX_VALUE;
+			}
+
+			Tuple mouseLocation = mouseMoves.get(state.turn + (int)(distance/catVelocity)).result;
+			return (Math.pow(mouseLocation.x - state.cat.x, 2) +
+					Math.pow(mouseLocation.y - state.cat.y, 2));
+		};
+
+		final Function<State, Double> heuristic3 = (state) -> {
+			return (heuristic1.apply(state) + heuristic2.apply(state))/2.0;
+		};
+		
+		
+		Astar(s, heuristic1);
+		Astar(s, heuristic2);
+		Astar(s, heuristic3);
 	}
 
-	private static void dfs() {
-		State original = new State();
+	private static void generateMoves(Tuple src, Tuple dest) {
+		Tuple curr = new Tuple(src.x, src.y);
+		// 9,6  6,10
+		int diagnol = Math.min(Math.abs(src.x - dest.x),
+				Math.abs(src.y - dest.y)); // min(3, 4) == 3
+		int x = Math.abs(src.x - dest.x) - diagnol > 0 ? Math.abs(src.x - dest.x) - diagnol : 0; // 3 - 3 == 0
+		int y = Math.abs(src.y - dest.y) - diagnol > 0 ? Math.abs(src.y - dest.y) - diagnol : 0; // 4 - 3 == 1
+
+		for(int i = 0; i < diagnol; i++) {
+			Tuple newLocation = new Tuple(
+					((int)(curr.x + Math.copySign(1, dest.x - curr.x))),
+					((int)(curr.y + Math.copySign(1, dest.y - curr.y)))
+					);
+			mouseMoves.add(new Move(newLocation));
+			curr = newLocation;
+		}
+
+		for(int i = 0; i < x; i++) {
+			Tuple newLocation = new Tuple(
+					((int)(curr.x + Math.copySign(1, dest.x - curr.x))),
+					curr.y
+					);
+			mouseMoves.add(new Move(newLocation));
+			curr = newLocation;
+		}
+
+		for(int i = 0; i < y; i++) {
+			Tuple newLocation = new Tuple(
+					curr.x,
+					((int)(curr.y + Math.copySign(1, dest.y - curr.y)))
+					);
+			mouseMoves.add(new Move(newLocation));
+			curr = newLocation;
+		}
+	}
+
+	private static void generateMouseMoves(State s){
+		mouseMoves = new ArrayList<>();
+
+		List<Tuple> cheeseToGet = new ArrayList<>();
+		Tuple mouse = new Tuple(s.mouse.x, s.mouse.y);
+		for(Tuple c: s.cheese) {
+			cheeseToGet.add(new Tuple(c.x, c.y));
+		}
+
+		while(true) {
+			Tuple closest = null;
+			for(Tuple c: cheeseToGet) {
+				if(closest == null) {
+					closest = c;
+				}
+
+				if(Math.pow(Math.abs(c.x - mouse.x), 2) +
+						Math.pow(Math.abs(c.y - mouse.y), 2) <
+						Math.pow(Math.abs(closest.x - mouse.x), 2) +
+						Math.pow(Math.abs(closest.y - mouse.y), 2)){
+					closest = c;
+				}
+			}
+
+			if(closest == null) {
+				break;
+			}
+
+			System.out.println("Closest cheese: " + closest);
+			generateMoves(mouse, closest);
+			cheeseToGet.remove(closest);
+			mouse.x = closest.x;
+			mouse.y = closest.y;
+		}
+	}
+
+	private static void bfs(State original) {
+		Queue<State> states = new LinkedList<>();
+
+		states.add(original);
+		original.printBoard();
+
+		while(!states.isEmpty()) {
+			State e = states.poll();
+			List<Move> moves = e.possibleMoves();
+			for(Move m: moves) {
+				State post = e.performMove(m);
+				if(post.goal()) {
+					post.printBoard();
+					post.printMoves();
+					System.out.println("Complete");
+					return;
+				}
+				states.add(post);
+			}
+		}
+
+		System.out.println("No possible solutions");
+	}
+
+	private static void Astar(State original, Function<State, Double> heuristic){
+		Comparator<State> comparator = 
+				(State o1, State o2) -> heuristic.apply(o1).compareTo(heuristic.apply(o2));
+
+				PriorityQueue<State> states = new PriorityQueue<>(comparator);
+				states.add(original);
+
+				while(!states.isEmpty()) {
+					State e = states.poll();
+					List<Move> moves = e.possibleMoves();
+					for(Move m: moves) {
+						State post = e.performMove(m);
+						if(post.goal()) {
+							post.printBoard();
+							post.printMoves();
+							System.out.println("Complete");
+							return;
+						}
+						states.add(post);
+					}
+				}
+
+				System.out.println("No possible solutions");
+	}
+
+	private static void dfs(State original) {
 		Stack<State> states = new Stack<>();
 
 		states.add(original);
@@ -38,56 +202,77 @@ public class A1 {
 				{-1, -2}, {-2, -1}, {-2, 1}, {-1, 2}};
 
 		private static final int BOARD_SIZE = 12;
-
-		public void printBoard() {
-			for(int i = 0; i < BOARD_SIZE; i++) {
-				for(int j = 0;j < BOARD_SIZE; j++) {
-					if(cat.x == i && cat.y == j) {
-						System.out.print("c");
-					} else if(mouse.x == i && mouse.y == j) {
-						System.out.print("m");
-					} else {
-						// TODO: cheese
-						System.out.print("_");
-					}
-				}
-				System.out.println();
-			}
-		}
-
-		public State performMove(Move m) {
-			State newState = new State(this);
-			newState.cat.x = m.result.x;
-			newState.cat.y = m.result.y;
-			
-			// TODO: move mouse
-			
-			return newState;
-		}
-
 		private List<Move> moves = new ArrayList<>(38);
 		int[][] board = new int[BOARD_SIZE][BOARD_SIZE];
 		Tuple cat, mouse;
 		private List<Tuple> cheese = new ArrayList<>();
+		public int turn = -1;
 
 		public State() {
-			// TODO:
-			cat = new Tuple(0,0);
-			mouse = new Tuple(1,1);
-			cheese.add(new Tuple(0,0));
-			cheese.add(new Tuple(0,0));
-			cheese.add(new Tuple(0,0));
+			cat = new Tuple(2,6);
+			mouse = new Tuple(7,1);
+			// TODO: randomize
+			cheese.add(new Tuple(9,1));
+			cheese.add(new Tuple(9,6));
+			cheese.add(new Tuple(6,10));
 		}
 
 		public State(State other) {
 			this.cat = new Tuple(other.cat.x, other.cat.y);
 			this.mouse = new Tuple(other.mouse.x, other.mouse.y);
+			this.turn = other.turn;
 			for(Tuple c: other.cheese) {
 				this.cheese.add(new Tuple(c.x, c.y));
 			}
 			for(Move m: other.moves) {
 				this.moves.add(new Move(new Tuple(m.result.x, m.result.y)));
 			}
+		}
+
+		public void printBoard() {
+			for(int i = 0; i < BOARD_SIZE; i++) {
+				for(int j = 0;j < BOARD_SIZE; j++) {
+					if(cat.x == j && cat.y == i) {
+						System.out.print("c");
+					} else if(mouse.x == j && mouse.y == i) {
+						System.out.print("m");
+					} else {
+
+						boolean found = false;
+						for(Tuple c: this.cheese) {
+							if(c.x == j && c.y == i) {
+								System.out.print("x");
+								found = true;
+							}
+						}
+
+						if(!found) {
+							System.out.print("_");	
+						}
+					}
+				}
+				System.out.println();
+			}
+			System.out.println("\n\n\n");
+		}
+
+		public State performMove(Move m) {
+			State newState = new State(this);
+			newState.cat.x = m.result.x;
+			newState.cat.y = m.result.y;
+			newState.moves.add(m);
+
+			newState.turn++;
+			newState.mouse = mouseMoves.get(newState.turn).result;
+			for(Tuple c: newState.cheese) {
+				if(c.x == newState.mouse.x &&
+						c.y == newState.mouse.y) {
+					newState.cheese.remove(c);
+					break;
+				}
+			}
+
+			return newState;
 		}
 
 		public void printMoves() {
