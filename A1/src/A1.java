@@ -204,13 +204,17 @@ public class A1 {
 		private static final int BOARD_SIZE = 12;
 		private List<Move> moves = new ArrayList<>(38);
 		int[][] board = new int[BOARD_SIZE][BOARD_SIZE];
-		Tuple cat, mouse;
+		// Tuple cat, mouse;
+		private List<Tuple> cats = new ArrayList<>();
+		private List<Tuple> mice = new ArrayList<>();
 		private List<Tuple> cheese = new ArrayList<>();
 		public int turn = -1;
 
 		public State() {
-			cat = new Tuple(2,6);
-			mouse = new Tuple(7,1);
+			//cat = new Tuple(2,6);
+			cats.add(new Tuple(2,6));
+			//mouse = new Tuple(7,1);
+			mice.add(new Tuple(7,1));
 			// TODO: randomize
 			cheese.add(new Tuple(9,1));
 			cheese.add(new Tuple(9,6));
@@ -218,8 +222,14 @@ public class A1 {
 		}
 
 		public State(State other) {
-			this.cat = new Tuple(other.cat.x, other.cat.y);
-			this.mouse = new Tuple(other.mouse.x, other.mouse.y);
+			//this.cat = new Tuple(other.cat.x, other.cat.y);
+			for(Tuple c: other.cats) {
+				this.cats.add(new Tuple(c.x, c.y));
+			}
+			for(Tuple m: other.mice) {
+				this.mice.add(new Tuple(m.x, m.y));
+			}
+			//this.mouse = new Tuple(other.mouse.x, other.mouse.y);
 			this.turn = other.turn;
 			for(Tuple c: other.cheese) {
 				this.cheese.add(new Tuple(c.x, c.y));
@@ -228,27 +238,27 @@ public class A1 {
 				this.moves.add(new Move(new Tuple(m.result.x, m.result.y)));
 			}
 		}
+		
+		public boolean containsThing(List<Tuple> things, int i, int j) {
+			for(Tuple c: things) {
+				if(c.x == j && c.y == i) {
+					return true;
+				}
+			}
+			return false;
+		}
 
 		public void printBoard() {
 			for(int i = 0; i < BOARD_SIZE; i++) {
 				for(int j = 0;j < BOARD_SIZE; j++) {
-					if(cat.x == j && cat.y == i) {
+					if(containsThing(cats, i, j)) {
 						System.out.print("c");
-					} else if(mouse.x == j && mouse.y == i) {
+					} else if(containsThing(mice, i, j)) {
 						System.out.print("m");
+					} else if(containsThing(cheese, i, j)) {
+						System.out.print("x");
 					} else {
-
-						boolean found = false;
-						for(Tuple c: this.cheese) {
-							if(c.x == j && c.y == i) {
-								System.out.print("x");
-								found = true;
-							}
-						}
-
-						if(!found) {
-							System.out.print("_");	
-						}
+						System.out.print("_");
 					}
 				}
 				System.out.println();
