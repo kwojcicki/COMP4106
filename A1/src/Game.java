@@ -1,12 +1,14 @@
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
 import java.util.Set;
 import java.util.Stack;
-import java.util.function.Function;
 import java.util.stream.IntStream;
+
+import sun.security.x509.UniqueIdentity;
 
 
 public class Game {
@@ -14,8 +16,60 @@ public class Game {
 	static List<Integer> p = new ArrayList<Integer>();
 	public static void main(String[] args) {
 		//dfs();
-		bfs();
+		//bfs();
 		//test();
+		
+		final int n = 5;
+		IntStream.range(0, 2 * n).forEach(p::add);
+		List<List<Integer>> permuts = new ArrayList<List<Integer>>();
+		permutations(0, permuts);
+		System.out.println(permuts.size());
+		
+		List<List<Integer>> uniques = new ArrayList<>();
+		
+		for(List<Integer> pc: permuts) {
+			boolean isUnique = true;
+			for(List<Integer> u: uniques) {
+				boolean hasUniquePair = false;
+				for(int i = 0; i < pc.size(); i += 2) {
+					boolean isUniquePair = true;
+					for(int j = 0; j < u.size(); j+= 2) {
+						if((pc.get(i) == u.get(j) && pc.get(i + 1) == u.get(j + 1)) || 
+								(pc.get(i) == u.get(j + 1) && pc.get(i + 1) == u.get(j))) {
+									isUniquePair = false;
+									break;
+								}
+					}
+					if(isUniquePair) {
+						hasUniquePair = true;
+						break;
+					}
+				}
+				if(!hasUniquePair) {
+					isUnique = false;
+					break;
+				}
+			}
+			if(isUnique) {
+				uniques.add(pc);
+			}
+		}
+		
+		System.out.println(uniques.size());
+	}
+	
+	public static void permutations(int index, List<List<Integer>> permuts) {
+		if(index == p.size()) {
+			ArrayList<Integer> dup = new ArrayList<>();
+			p.forEach(dup::add);
+			permuts.add(dup);
+		}
+		
+		for(int i = index; i < p.size(); i++) {
+			Collections.swap(p, index, i);
+			permutations(index + 1, permuts);
+			Collections.swap(p, index, i);
+		}
 	}
 
 	private static void test() {

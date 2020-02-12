@@ -30,8 +30,8 @@ public class A1 {
 		//System.out.println("Mouse path: " + mouseMoves + " " + mouseMoves.size());
 
 		Node finalState = null;
-		// finalState = dfs(s);
-		finalState = bfs(s);
+		finalState = dfs(s);
+		// finalState = bfs(s);
 
 		final Function<State, Double> heuristic1 = (state) -> {
 			return (Math.pow(state.mice.get(0).x - state.cats.get(0).x, 2) +
@@ -174,9 +174,9 @@ public class A1 {
 				{-1, -2}, {-2, -1}, {-2, 1}, {-1, 2}};
 
 		private static final int BOARD_SIZE = 12;
-		private static final boolean RANDOMIZE = true;
+		private static final boolean RANDOMIZE = false;
 		private static final int N_CATS = 1;
-		private static final int N_MOUSE = 2;
+		private static final int N_MOUSE = 1;
 		private static final int N_CHEESE = 3;
 		private static final int MOUSE_MOVE = 1;
 		private List<Move> moves = new ArrayList<>(38);

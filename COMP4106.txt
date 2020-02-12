@@ -1,0 +1,14 @@
+classification 
+	non neural
+	neural methods
+	
+	cancer/no cancer - skin lesion
+	doctor: smooth/continous non cancer, irregular/jagged cancer
+	ie not smooth -> smooth (more like to be cancer)
+	
+	measurement = features (determined by expert)/attributes 
+	samples
+	classes cancer/no cancer
+	classification - decision making => determining a function, Discriminant function (discriminates between classes)
+		
+	von neuman model of computing
