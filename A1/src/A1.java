@@ -1,10 +1,13 @@
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.Queue;
-import java.util.Random;
+import java.util.Set;
 import java.util.Stack;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Function;
@@ -12,58 +15,66 @@ import java.util.stream.IntStream;
 
 public class A1 {
 
-	//private static List<Move> mouseMoves;
+	
+	public static void doA(Function<State, Node> a, State t) {
+
+		Node finalState = a.apply(t);
+
+		System.out.println("\n\n-----------");
+		while(finalState != null) {
+			finalState.state.printBoard();
+			finalState.state.printMoves();
+
+			finalState = finalState.parent;
+		}
+	}
 
 	public static void main(String[] args) {
+		
 		State s = new State();
 		s.printBoard();
 
-		System.out.println(s.possibleMoves());
+		//dfs(s);
+		//bfs(s);
 
-		//s = s.performMove(s.possibleMoves().get(2));
-
-		//s.printBoard();
-
-
-		//generateMouseMoves(s);
-
-		//System.out.println("Mouse path: " + mouseMoves + " " + mouseMoves.size());
-
-		Node finalState = null;
-		finalState = dfs(s);
-		// finalState = bfs(s);
-
-		final Function<State, Double> heuristic1 = (state) -> {
-			return (Math.pow(state.mice.get(0).x - state.cats.get(0).x, 2) +
-					Math.pow(state.mice.get(0).y - state.cats.get(0).y, 2)); 
-		};
-		final Function<State, Double> heuristic2 = (state) -> {
-			double distance = (Math.pow(state.mice.get(0).x - state.cats.get(0).x, 2) +
-					Math.pow(state.mice.get(0).y - state.cats.get(0).y, 2));
-
-			double catVelocity = Math.pow(2, 1) + Math.pow(1, 1);
-
-
-			//if(state.turn + (int)(distance/catVelocity) >= mouseMoves.size()) {
-			//				return Double.MAX_VALUE;
-			//}
-
-			int futureSteps = (int)(distance/catVelocity);
-			State n = new State(state);
-			for(int i = 0; i < futureSteps; i++) {
-				n.simulateMice(n);
-				n = new State(n);
-				if(n.goal()) {
-					return Double.MAX_VALUE;
+		final Function<Node, Double> heuristic1 = (state) -> {
+			double ret = state.depth;
+			for(int i = 0; i <  state.state.mice.size(); i++) {
+				for(int j = 0; j < state.state.cats.size(); j++) {
+					ret += (Math.pow(state.state.mice.get(i).x - state.state.cats.get(j).x, 2) +
+							Math.pow(state.state.mice.get(i).y - state.state.cats.get(j).y, 2)); 
 				}
 			}
+			return ret;
+		};
+		final Function<Node, Double> heuristic2 = (state) -> {
+			double ret = state.depth;
+			for(int i = 0; i <  state.state.mice.size(); i++) {
+				for(int j = 0; j < state.state.cats.size(); j++) {
+					double distance = (Math.pow(state.state.mice.get(i).x - state.state.cats.get(j).x, 2) +
+							Math.pow(state.state.mice.get(i).y - state.state.cats.get(j).y, 2));
 
-			Tuple mouseLocation = n.mice.get(0);
-			return (Math.pow(mouseLocation.x - state.cats.get(0).x, 2) +
-					Math.pow(mouseLocation.y - state.cats.get(0).y, 2));
+					double catVelocity = Math.sqrt(Math.pow(2, 1) + Math.pow(1, 1));
+
+					int futureSteps = (int)(distance/catVelocity);
+					State n = new State(state.state);
+					for(int f = 0; f < futureSteps; f++) {
+						n.simulateMice(n);
+						n = new State(n);
+						if(n.goal()) {
+							return Double.MAX_VALUE;
+						}
+					}
+
+					Tuple mouseLocation = n.mice.get(0);
+					ret += (Math.pow(mouseLocation.x - state.state.cats.get(j).x, 2) +
+							Math.pow(mouseLocation.y - state.state.cats.get(j).y, 2));
+				}
+			}
+			return ret;
 		};
 
-		final Function<State, Double> heuristic3 = (state) -> {
+		final Function<Node, Double> heuristic3 = (state) -> {
 			return (heuristic1.apply(state) + heuristic2.apply(state))/2.0;
 		};
 		//
@@ -71,100 +82,138 @@ public class A1 {
 		//Astar(s, heuristic1);
 		//Astar(s, heuristic2);
 		//Astar(s, heuristic3);
-		
-		System.out.println("\n\n-----------");
-		while(finalState != null) {
-			finalState.state.printBoard();
-			finalState.state.printMoves();
-			
-			finalState = finalState.parent;
-		}
-	}
 
-	private static Node bfs(State original) {
-		Queue<Node> states = new LinkedList<>();
-
-		states.add(new Node(original));
-		original.printBoard();
-
-		while(!states.isEmpty()) {
-			Node e = states.poll();
-			List<Move> moves = e.state.possibleMoves();
-			for(Move m: moves) {
-				Node post = new Node(e.state.performMove(m));
-				post.parent = e;
-				if(post.state.goal()) {
-					post.state.printBoard();
-					post.state.printMoves();
-					System.out.println("Complete");
-					return post;
-				}
-				states.add(post);
-			}
-		}
-
-		System.out.println("No possible solutions");
-		return null;
-	}
-
-	private static Node Astar(State original, Function<State, Double> heuristic){
-		Comparator<Node> comparator = 
-				(Node o1, Node o2) -> heuristic.apply(o1.state).compareTo(heuristic.apply(o2.state));
-
-				PriorityQueue<Node> states = new PriorityQueue<>(comparator);
-				states.add(new Node(original));
-
-				while(!states.isEmpty()) {
-					Node e = states.poll();
-					List<Move> moves = e.state.possibleMoves();
-					for(Move m: moves) {
-						Node post = new Node(e.state.performMove(m));
-						post.parent = e;
-						if(post.state.goal()) {
-							post.state.printBoard();
-							post.state.printMoves();
-							System.out.println("Complete");
-							return post;
-						}
-						states.add(post);
-					}
-				}
-
-				System.out.println("No possible solutions");
-				return null;
+		//doA((state) -> dfs(state), s);
+		doA((state) -> bfs(state), s);
+		//doA((state) -> Astar(state, heuristic2), s);
 	}
 
 	private static Node dfs(State original) {
 		Stack<Node> states = new Stack<>();
+		Set<State> visited = new HashSet<>();
 
-		states.add(new Node(original));
+		states.add(new Node(original, null));
+		visited.add(original);
 
+		int i = 0;
 		while(!states.isEmpty()) {
 			Node e = states.pop();
+			i++;
+			visited.add(e.state);
 			List<Move> moves = e.state.possibleMoves();
-			//System.out.println(moves);
 			for(Move m: moves) {
-				Node post = new Node(e.state.performMove(m));
-				post.parent = e;
+				State newState = e.state.performMove(m);
+				Node post = new Node(newState, e);
 				if(post.state.goal()) {
 					post.state.printBoard();
 					post.state.printMoves();
-					System.out.println("Complete");
+					System.out.println("Complete, expanded: " + i);
 					return post;
 				}
-				states.push(post);
+				if(!visited.contains(newState)) {
+					states.push(post);	
+				}
 			}
 		}
 
-		System.out.println("No possible solutions");
+		System.out.println("No possible solutions, expanded: " + i);
 		return null;
+	}
+
+	private static Node bfs(State original) {
+		Queue<Node> states = new LinkedList<>();
+		Set<State> visited = new HashSet<>();
+
+		states.add(new Node(original, null));
+		visited.add(original);
+		original.printBoard();
+
+		int i = 0;
+		while(!states.isEmpty()) {
+			Node e = states.poll();
+			i++;
+			visited.add(e.state);
+			List<Move> moves = e.state.possibleMoves();
+			for(Move m: moves) {
+				State newState = e.state.performMove(m);
+				Node post = new Node(newState, e);
+				if(post.state.goal()) {
+					post.state.printBoard();
+					post.state.printMoves();
+					System.out.println("Complete, expanded: " + i);
+					return post;
+				}
+				if(!visited.contains(newState)) {
+					states.add(post);	
+				}
+			}
+		}
+
+		System.out.println("No possible solutions, expanded: " + i);
+		return null;
+	}
+
+	private static Node Astar(State original, Function<Node, Double> heuristic){
+		Comparator<Node> comparator = 
+				(Node o1, Node o2) -> heuristic.apply(o1).compareTo(heuristic.apply(o2));
+
+				PriorityQueue<Node> states = new PriorityQueue<>(comparator);
+				Map<State, Node> closed = new HashMap<>();
+				Map<State, Node> openMap = new HashMap<>();
+
+				states.add(new Node(original, null));
+				int i = 0;
+				while(!states.isEmpty()) {
+					Node e = states.poll();
+					i++;
+
+					if(e.bad) {
+						continue;
+					}
+
+					if(e.state.goal()) {
+						e.state.printBoard();
+						e.state.printMoves();
+						System.out.println("Complete, expanded: " + i);
+						return e;
+					}
+
+					openMap.remove(e.state);
+					closed.put(e.state, e);
+					List<Move> moves = e.state.possibleMoves();
+					for(Move m: moves) {
+						Node post = new Node(e.state.performMove(m), e);
+						if(!openMap.containsKey(post.state) && !closed.containsKey(post.state)) {
+							states.add(post);
+							openMap.put(post.state, post);							
+						} else if(closed.containsKey(post.state) && closed.get(post.state).cost > post.cost){
+							states.add(post);
+							openMap.put(post.state, post);
+							closed.get(post.state).bad = true;
+						} else if(openMap.containsKey(post.state) && openMap.get(post.state).cost > post.cost){
+							states.add(post);
+							openMap.get(post.state).bad = true;
+							openMap.put(post.state, post);
+						}
+
+						//states.add(post);
+					}
+				}
+
+				System.out.println("No possible solutions, expanded: " + i);
+				return null;
 	}
 
 	public static class Node {
 		private final State state;
 		private Node parent = null;
-		public Node(State state) {
+		private int depth, cost;
+		private boolean bad = false;
+		public Node(State state, Node parent) {
 			this.state = state;
+			this.parent = parent;
+			this.depth = (parent == null ? 0: parent.depth + 1);
+			this.cost = (parent == null ? 0 : parent.cost + 1 );
 		}
 	}
 
@@ -173,18 +222,18 @@ public class A1 {
 		private static int[][] SHIFT = {{1,2}, {2,1}, {2, -1}, {1, -2}, 
 				{-1, -2}, {-2, -1}, {-2, 1}, {-1, 2}};
 
-		private static final int BOARD_SIZE = 12;
-		private static final boolean RANDOMIZE = false;
+		private static final int BOARD_SIZE = 12; // 12, 30, 50
+		private static final boolean RANDOMIZE = true;
 		private static final int N_CATS = 1;
 		private static final int N_MOUSE = 1;
 		private static final int N_CHEESE = 3;
 		private static final int MOUSE_MOVE = 1;
 		private List<Move> moves = new ArrayList<>(38);
-		int[][] board = new int[BOARD_SIZE][BOARD_SIZE];
+		//int[][] board = new int[BOARD_SIZE][BOARD_SIZE];
 		private List<Tuple> cats = new ArrayList<>();
 		private List<Tuple> mice = new ArrayList<>();
 		private List<Tuple> cheese = new ArrayList<>();
-		public int turn = -1;
+		//public int turn = -1;
 
 		private void generateUnique(List<Tuple> list, int num) {
 			IntStream.range(0, num).forEach(i -> {
@@ -210,7 +259,7 @@ public class A1 {
 							break;
 						}
 					}
-					
+
 					if(unique) {
 						list.add(proposed);
 						break;
@@ -218,18 +267,24 @@ public class A1 {
 				}
 			});
 		}
-		
+
 		public State() {
 			if(RANDOMIZE) {
 				generateUnique(cats, N_CATS);
 				generateUnique(cheese, N_CHEESE);
 				generateUnique(mice, N_MOUSE);
 			} else {
-				cats.add(new Tuple(2,6));
-				mice.add(new Tuple(7,1));
-				cheese.add(new Tuple(9,1));
-				cheese.add(new Tuple(9,6));
-				cheese.add(new Tuple(6,10));	
+				//cats.add(new Tuple(2,6));
+				//mice.add(new Tuple(7,1));
+				//cheese.add(new Tuple(9,1));
+				//cheese.add(new Tuple(9,6));
+				//cheese.add(new Tuple(6,10));
+				
+				cats.add(new Tuple(5, 1));
+				mice.add(new Tuple(7, 1));
+				cheese.add(new Tuple(0, 0));
+				cheese.add(new Tuple(8,7));
+				cheese.add(new Tuple(10,7));
 			}
 		}
 
@@ -242,7 +297,7 @@ public class A1 {
 				this.mice.add(new Tuple(m.x, m.y));
 			}
 			//this.mouse = new Tuple(other.mouse.x, other.mouse.y);
-			this.turn = other.turn;
+			//this.turn = other.turn;
 			for(Tuple c: other.cheese) {
 				this.cheese.add(new Tuple(c.x, c.y));
 			}
@@ -264,17 +319,20 @@ public class A1 {
 			for(int i = 0; i < BOARD_SIZE; i++) {
 				for(int j = 0;j < BOARD_SIZE; j++) {
 					if(containsThing(cats, i, j)) {
-						System.out.print("c");
+						System.out.print("c ");
 					} else if(containsThing(mice, i, j)) {
-						System.out.print("m");
+						System.out.print("m ");
 					} else if(containsThing(cheese, i, j)) {
-						System.out.print("x");
+						System.out.print("x ");
 					} else {
-						System.out.print("_");
+						System.out.print("_ ");
 					}
 				}
 				System.out.println();
 			}
+			System.out.println("Mice: " + this.mice);
+			System.out.println("Cats: " + this.cats);
+			System.out.println("Cheese: " + this.cheese);
 			System.out.println("\n\n\n");
 		}
 
@@ -319,7 +377,7 @@ public class A1 {
 						m.x = src.x;
 						m.y = ((int)(src.y + Math.copySign(1, dest.y - src.y)));
 						y--;
-					}
+					} 
 					itr++;
 				}
 
@@ -339,7 +397,7 @@ public class A1 {
 
 			newState.moves.add(m);
 
-			newState.turn++;
+			//newState.turn++;
 			//newState.mouse = mouseMoves.get(newState.turn).result;
 
 			simulateMice(newState);
@@ -503,3 +561,28 @@ public class A1 {
 	}
 
 }
+
+
+/**
+Which search worked best?
+	A*
+Which heuristics did you use?
+	To mouse current location/to mouse future location
+Why did you choose these heuristics?
+	intuitive
+Does the combination of the two heuristics work better or worse than they do individually?
+	About the same
+How well do the searches work if you increase the size of the board to 30x30 or 50x50.
+	DFS much worse, BFS worse, A* relatively agnostic
+How many nodes are searched for each of the searches on average with respective deviation.(BFS, DFS, and A* )
+	b: branching factor, d: depth of least cost solution, m: max depth
+	DFS O(b^m)
+	BFS O(b^(d+1))
+	A* O(d)
+What is the average number of moves required for each type of search with respective deviation. (BFS, DFS, and A* )
+	DFS between m and d
+	BFS d
+	A* close to d
+Which search works best if you increase the speed of the Mouse to two steps per turn? Three steps?
+	BFS and A*
+ */

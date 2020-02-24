@@ -1,0 +1,39 @@
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{algorithm}
+\usepackage{float}
+\usepackage{color}
+\usepackage{multicol}
+\usepackage{forloop}
+\usepackage{graphicx}
+\usepackage[margin=0.8in]{geometry}
+\usepackage{caption}
+\usepackage{enumerate}
+
+\graphicspath{ {.} }
+\title{COMP 4106\\
+	\large{Assignment 1, Cat and Mouse}}
+\author{Krystian Wojcicki, 101001444}
+\date{Winter 2020}
+
+\begin{document}
+\maketitle
+
+\section{State Space}
+The state space for the Cat and Mouse problem was relatively small consisting of a list of tuples (to represent the cheese location, and 2 tuples (one to represent the mouse location and one to represent the cat location). In addition an integer to store the size of the board was kept. This integer was utilized to ensure no mouse/cat went out of bounds and did not perform any illegal moves. The list of tuples representing the cheese shrunk as the mouse ate cheese, and the game was over either once all the cheese was gone or the mouse and cat tuples were equivalent. For the bonus questions the state was extended to store a list of tuples to represent all the cats location and a list of tuples to represent all the mice location. 
+
+\section{Heuristics}
+
+The two heuristics chosen were relatively intuitive and simple. Revolving around the euclidean distance between the cat(s) and mice(s).
+
+\subsection{Heuristic One}
+The first heuristic tries to minimize the euclidean distance between the current location of the mouse and the current location of the cat. The idea behind this is the closer the two tuples are the more likely they are able to overlap and for the cat to win. The problem with this approach is due to the mouse set the cat has its not always ideal for the cat to be 1 tile away.
+
+\subsection{Heuristic Two}
+The second heuristic utilizes a similar approach to Heuristic One to calculate how many moves are required for the cat to get to the current location of the mouse. Then given that number of moves the heuristic calculates where the mouse would be in the future. The heuristic favors nodes that minimize the distance between the cats location and that future mouse location.
+
+\subsection{Heuristic Three}
+The third heuristic, as described by the assignment expectation was simply the average of the two previously mentioned heuristics. Essentially trying to minimize the immediate distance between the cat and the mouse, but also minimizing the future distance between the two.
+
+\end{document}

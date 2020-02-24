@@ -1,24 +1,35 @@
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Scanner;
 import java.util.Set;
-import java.util.stream.IntStream;
+import java.util.function.Function;
+
+import javax.management.RuntimeErrorException;
 
 public class A2 {
 
 
 	public static final int N_s = 4;
+	public static final int ALLOWED_DEPTH = 5;
+	public static final boolean HUMAN_PLAYER = false;
+
 	public static Set<Tuple> validBlue = new HashSet<>();
 	public static Set<Tuple> mancalaBlue = new HashSet<>();
 
 	public static Set<Tuple> validRed = new HashSet<>();
 	public static Set<Tuple> mancalaRed = new HashSet<>();
 
-	// TODO:
 	public static Map<Tuple, Tuple> stoneOrderCCW = new HashMap<>();
 	public static Map<Tuple, Tuple> stoneOrderCW = new HashMap<>();
+
+	//public static Map<State, Integer> maxValues = new HashMap<>();
+	//public static Map<State, Integer> minValues = new HashMap<>();
+	public static Map<State, List<State>> expanded = new HashMap<>();
 
 	static {
 		stoneOrderCCW.put(new Tuple(3, 0), new Tuple(3, 1));
@@ -47,10 +58,13 @@ public class A2 {
 		stoneOrderCCW.put(new Tuple(4, 3), new Tuple(4, 2));
 		stoneOrderCCW.put(new Tuple(4, 2), new Tuple(4, 1));
 		stoneOrderCCW.put(new Tuple(4, 1), new Tuple(3, 0));
-		
-		// TODO: stoneOrderCW
+
+		for(Entry<Tuple, Tuple> entry: stoneOrderCCW.entrySet()) {
+			stoneOrderCW.put(entry.getValue(), entry.getKey());
+		}
+
 	}
-	
+
 	static {
 		validBlue.add(new Tuple(3, 0));
 		validBlue.add(new Tuple(4, 0));
@@ -105,18 +119,154 @@ public class A2 {
 		mancalaRed.add(new Tuple(7, 4));
 	}
 
-	public static void main(String[] args) {
+	public static void main(String[] args) throws InterruptedException {
+		Scanner in = new Scanner(System.in);
 		State s = new State();
+		Player p = new Player(1);
+		Player p1 = new Player(1);
 
-		s.printBoard();
-		
-		List<State> states = s.performMove(new Move(3, 2, 1, true, false));
-		System.out.println("---");
-		states.get(0).printBoard();
-		System.out.println(states.size());
-		
+		while(true) {
+			s.printBoard();
+			System.out.println("---");
+			s = p.computerPlay(s);
+
+			s.printBoard();
+			System.out.println("---");
+
+			if(HUMAN_PLAYER) {
+				while(true) {
+					int x = in.nextInt();
+					int y = in.nextInt();
+					boolean ccw = in.nextBoolean();
+					if(x == -1 || y == -1) {
+						break;
+					}
+
+					KeyPair<Boolean, State> r = s.performMovePlayer(new Move(x, y, 1, ccw, false));
+					s = r.value;
+					if(!r.key) {
+						break;
+					}
+				}
+
+				s.redTurn = !s.redTurn;	
+			} else {
+				s = p1.computerPlay(s);
+				//Thread.sleep(5000);
+			}
+
+			if(s.goal()) {
+				break;
+			}
+
+		}
+
+		// List<State> states = s.performMove(new Move(3, 2, 1, true, false));
+
+		//states.get(0).printBoard();
+		//System.out.println(states.size());
+
+		in.close();
 		//System.out.println(s.generateMoves());
 		//System.out.println(s.generateMoves().size());
+	}
+
+
+	static class Player {
+
+		private final int HEURISTIC;
+
+		public Player(final int h) {
+			this.HEURISTIC = h;			
+		}
+
+		final Function<State, Integer> heuristic1 = (state) -> {
+			return mancalaRed.stream().mapToInt(i -> state.stones.get(i.x + i.y * 8)).sum();
+		};
+
+		private State computerPlay(State initialState) {
+			KeyPair<Integer, State> best = maxValue(new State(initialState, initialState.redTurn), Integer.MIN_VALUE, Integer.MAX_VALUE, 1);
+			System.out.println("best: " + best.key);
+			//			for(State s: initialState.generateMoves()) {
+			//				if(heuristic(s) == best) {
+			//					return s;
+			//				}
+			//			}
+
+			return best.value;
+		}
+
+		private KeyPair<Integer, State> maxValue(State state, int alpha, int beta, int currDepth) {
+			if(currDepth > ALLOWED_DEPTH || state.goal()) {
+				return new KeyPair<>(heuristic(state), state);
+			}
+			int bestValue = Integer.MIN_VALUE;
+			State bestState = null;
+			List<State> possibleMoves = state.generateMoves();
+			int possibleMovesSize = possibleMoves.size();
+			//if(possibleMovesSize > 10000) {
+			//state.generateMoves();	
+			//}
+			for(State node : possibleMoves){
+				KeyPair<Integer, State> mv;
+				//if(minValues.containsKey(node)) {
+				//	        		mv = new KeyPair<>(minValues.get(node), node); 
+				//} else {
+				mv  = minValue(node, alpha, beta, currDepth + 1);
+				//minValues.put(node, mv.key);
+				//}
+
+				if(mv.key > bestValue) {
+					bestValue = mv.key;
+					bestState = node;
+				}
+
+				if(bestValue >= beta) {
+					break;
+				}
+				alpha = Math.max(alpha, bestValue);
+			}
+			return new KeyPair<>(bestValue, bestState);
+		}
+
+		private int heuristic(State state) {
+			int heuristicValue = -1;
+			if(HEURISTIC == 1) {
+				heuristicValue = heuristic1.apply(state);	
+			}
+
+			return heuristicValue;
+		}
+
+		private KeyPair<Integer, State> minValue(State state, int alpha, int beta, int currDepth){
+			if(currDepth > ALLOWED_DEPTH || state.goal()) {
+				return new KeyPair<>(heuristic(state), state);
+			}
+
+			int bestValue = Integer.MAX_VALUE;
+			State bestState = null;
+
+			List<State> possibleMoves = state.generateMoves();
+			for(State node : possibleMoves){
+				KeyPair<Integer, State> mv;
+				//if(maxValues.containsKey(node)) {
+//					mv = new KeyPair<>(maxValues.get(node), node); 
+				//} else {
+					mv = maxValue(node, alpha, beta, currDepth + 1);
+//					maxValues.put(node, mv.key);
+				//}
+				if(bestValue > mv.key) {
+					bestValue = mv.key;
+					bestState = node;
+				}
+				if(bestValue <= alpha) {
+					break;
+				}
+				beta = Math.min(beta, bestValue);
+			}
+			return new KeyPair<>(bestValue, bestState);
+		}
+
 	}
 
 
@@ -140,27 +290,57 @@ public class A2 {
 
 	static class State {
 
-		private boolean redTurn = true;
+		boolean redTurn = true;
 
 		List<Integer> stones = new ArrayList<>();
 
 		public State() {
-			IntStream.range(0, 8 * 8).forEach(i -> {				
-				Tuple p = new Tuple(i % 8, i / 8);
-				if( (validBlue.contains(p) && !mancalaBlue.contains(p))  ||
-						(validRed.contains(p) && !mancalaRed.contains(p))) {
-					stones.add(N_s);
-				} else {
-					stones.add(0);
-				}
+			//			IntStream.range(0, 8 * 8).forEach(i -> {				
+			//				Tuple p = new Tuple(i % 8, i / 8);
+			//				if( (validBlue.contains(p) && !mancalaBlue.contains(p))  ||
+			//						(validRed.contains(p) && !mancalaRed.contains(p))) {
+			//					stones.add(N_s);
+			//				} else {
+			//					stones.add(0);
+			//				}
+			//
+			//			});
 
-			});
+			//stones.add(e)
+			List<Integer> x = Arrays.asList(0,0,0,2,0,0,0,0,
+					0,0,0,0,0,0,0,0,
+					0,0,0,8,0,0,0,0,
+					0,0,1,8,6,6,7,4,
+					2,6,6,1,0,0,0,0,
+					0,0,0,2,5,0,0,0,
+					0,0,0,7,7,0,0,0, 
+					0,0,0,0,2,0,0,0);
+
+			x.stream().forEach(i -> stones.add(i));
 		}
 
-		public State(State s) {
-			this.redTurn = !s.redTurn;
+		public boolean goal() {
+			boolean flag = true, flag1 = true;
+			for(Tuple s: validRed) {
+				if(!mancala(s) && stones.get(s.x + s.y * 8) != 0) {
+					flag = false;
+				}
+			}
+
+			for(Tuple s: validBlue) {
+				if(!mancala(s) && stones.get(s.x + s.y * 8) != 0) {
+					flag1 = false;
+				}
+			}
+			return flag || flag1;
+		}
+
+		public State(State s, boolean redTurn) {
+			this.redTurn = redTurn;
 			s.stones.forEach(i -> this.stones.add(i));
-			// TODO: ?
+			if(this.stones.size() != 64) {
+				throw new RuntimeErrorException(null, "Error");
+			}
 		}
 
 		public final Tuple nextPosition(final Tuple prev, boolean ccw) {
@@ -174,24 +354,24 @@ public class A2 {
 			return mancalaBlue.contains(position) || mancalaRed.contains(position);
 		}
 
-		public boolean opponent() {
-			// TODO:
-			return false;
+		public boolean opponentMancala(Tuple position) {
+			if(this.redTurn) {
+				return mancalaBlue.contains(position);
+			}
+
+			return mancalaRed.contains(position);
 		}
 
-		public List<State> performMove(Move m) {
-			List<State> newStates = new ArrayList<>();
-			State newState = new State(this);
+		public KeyPair<Boolean, State> performMovePlayer(Move m) {
+			State newState = new State(this, this.redTurn);
 
 			Tuple pos = new Tuple(m.x, m.y);
 			int count = newState.stones.get(m.x + m.y * 8);
 			newState.stones.set(m.x + m.y * 8, 0);
 
 			for(int i = 1; i <= count; i++) {
-				System.out.println("before: " + pos);
 				pos = nextPosition(pos, m.ccw);
-				System.out.println(pos);
-				if(mancala(pos) && opponent()) {
+				if(mancala(pos) && opponentMancala(pos)) {
 					if(m.take) {
 						// TODO:
 					} else {
@@ -202,15 +382,48 @@ public class A2 {
 					newState.stones.set(pos.x + pos.y*8, newState.stones.get(pos.x + pos.y * 8) + 1);	
 				}
 			}
-			
-			// TODO: what if blue
-			System.out.println(mancala(pos) + " " + pos);
-			if(mancala(pos) && validRed.contains(pos)) {
-				newStates.addAll(generateMoves());
-			} else {
-				newStates.add(newState);
+
+			if(this.redTurn && mancala(pos) && validRed.contains(pos)) {
+				return new KeyPair<>(true, newState);
+			} else if(!this.redTurn && mancala(pos) && validBlue.contains(pos)) {
+				return new KeyPair<>(true, newState);
 			}
 
+			int increase = 0;
+			if(!mancala(new Tuple(pos.x + 1, pos.y))) {
+				increase += newState.stones.get(pos.x + 1 + pos.y * 8);	
+				newState.stones.set(pos.x + 1 + pos.y * 8, 0);
+			}
+			if(!mancala(new Tuple(pos.x, pos.y + 1))) {
+				increase += newState.stones.get(pos.x + (pos.y + 1) * 8);
+				newState.stones.set(pos.x + (pos.y + 1) * 8, 0);
+			}
+			if(!mancala(new Tuple(pos.x - 1, pos.y))) {
+				increase += newState.stones.get(pos.x - 1 + pos.y * 8);
+				newState.stones.set(pos.x - 1 + pos.y * 8, 0);
+			}
+			if(!mancala(new Tuple(pos.x, pos.y - 1))) {
+				increase += newState.stones.get(pos.x + (pos.y - 1) * 8);
+				newState.stones.set(pos.x + (pos.y - 1) * 8, 0);
+			}
+
+			newState.stones.set(pos.x + pos.y*8, newState.stones.get(pos.x + pos.y * 8) + increase);
+
+			return new KeyPair<>(false, newState);
+		}
+
+		public List<State> performMove(Move m) {
+			List<State> newStates = new ArrayList<>();
+
+			KeyPair<Boolean, State> result = performMovePlayer(m);
+
+			if(result.key) {
+				//result.value.redTurn = !result.value.redTurn;
+				newStates.addAll(result.value.generateMoves());
+			} else {
+				result.value.redTurn = !result.value.redTurn;
+				newStates.add(result.value);
+			}
 
 			return newStates;
 		}
@@ -223,6 +436,13 @@ public class A2 {
 				stonesToUse = validRed;
 			}
 
+			if(goal()) {
+				return newStates;
+			}
+
+			if(expanded.containsKey(this)) {
+				return expanded.get(this);
+			}
 
 			for(Tuple position: stonesToUse) {
 				if(mancalaBlue.contains(position) || 
@@ -235,10 +455,11 @@ public class A2 {
 				}
 
 				// TODO:
-				Move n = new Move(position.x, position.y, 0, true, false);
-				newStates.addAll(performMove(n));
+				newStates.addAll(performMove(new Move(position.x, position.y, 0, true, false)));
 			}
-
+			
+			expanded.put(this, newStates);
+			
 			return newStates;
 		}
 
@@ -246,8 +467,6 @@ public class A2 {
 			for(int y = 0; y < 8; y++) {
 				for(int x = 0; x < 8; x++) {
 					Tuple p = new Tuple(x, y);
-					//if( (validBlue.contains(p) && !mancalaBlue.contains(p))  ||
-							//(validRed.contains(p) && !mancalaRed.contains(p))) {
 					if( (validBlue.contains(p))  ||
 							(validRed.contains(p))) {
 						System.out.print(stones.get(x + y * 8));
@@ -259,6 +478,46 @@ public class A2 {
 			}
 		}
 
+
+		@Override
+		public int hashCode() {
+			return stones.hashCode() * 10 + (this.redTurn ? 1 : 2);
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if (this == obj)
+				return true;
+			if (obj == null)
+				return false;
+			if (getClass() != obj.getClass())
+				return false;
+			State other = (State) obj;
+
+			if(other.redTurn != this.redTurn) {
+				return false;
+			}
+
+			for(int i = 0; i < stones.size(); i++) {
+				if(stones.get(i) != other.stones.get(i)) {
+					return false;
+				}
+			}
+
+			return true;
+		}
+
+	}
+
+	public static class KeyPair<T, V> {
+
+		public final T key;
+		public final V value;
+
+		public KeyPair(T x, V y) {
+			this.key = x;
+			this.value = y;
+		}
 	}
 
 
