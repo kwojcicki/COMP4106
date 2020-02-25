@@ -453,7 +453,6 @@ public class A2 {
 				if(stones.get(position.x + position.y * 8) == 0) {
 					continue;
 				}
-				Integer.parseInt('c');
 				// TODO:
 				newStates.addAll(performMove(new Move(position.x, position.y, 0, true, false)));
 				newStates.addAll(performMove(new Move(position.x, position.y, 0, false, false)));

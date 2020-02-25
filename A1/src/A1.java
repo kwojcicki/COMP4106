@@ -52,7 +52,7 @@ public class A1 {
 					double distance = (Math.pow(state.state.mice.get(i).x - state.state.cats.get(j).x, 2) +
 							Math.pow(state.state.mice.get(i).y - state.state.cats.get(j).y, 2));
 
-					double catVelocity = Math.sqrt(Math.pow(2, 1) + Math.pow(1, 1));
+					double catVelocity = Math.sqrt(Math.pow(2, 2) + Math.pow(1, 2));
 
 					int futureSteps = (int)(distance/catVelocity);
 					State n = new State(state.state);
