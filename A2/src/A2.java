@@ -203,7 +203,7 @@ public class A2 {
 			int bestValue = Integer.MIN_VALUE;
 			State bestState = null;
 			List<State> possibleMoves = state.generateMoves();
-			int possibleMovesSize = possibleMoves.size();
+			//int possibleMovesSize = possibleMoves.size();
 			//if(possibleMovesSize > 10000) {
 			//state.generateMoves();	
 			//}
@@ -453,9 +453,20 @@ public class A2 {
 				if(stones.get(position.x + position.y * 8) == 0) {
 					continue;
 				}
-
+				Integer.parseInt('c');
 				// TODO:
 				newStates.addAll(performMove(new Move(position.x, position.y, 0, true, false)));
+				newStates.addAll(performMove(new Move(position.x, position.y, 0, false, false)));
+				
+				newStates.addAll(performMove(new Move(position.x, position.y, 0, true, true)));
+				newStates.addAll(performMove(new Move(position.x, position.y, 1, true, true)));
+				newStates.addAll(performMove(new Move(position.x, position.y, 2, true, true)));
+				newStates.addAll(performMove(new Move(position.x, position.y, 3, true, true)));
+				
+				newStates.addAll(performMove(new Move(position.x, position.y, 0, false, true)));
+				newStates.addAll(performMove(new Move(position.x, position.y, 1, false, true)));
+				newStates.addAll(performMove(new Move(position.x, position.y, 2, false, true)));
+				newStates.addAll(performMove(new Move(position.x, position.y, 3, false, true)));
 			}
 			
 			expanded.put(this, newStates);

@@ -34,9 +34,6 @@ public class A1 {
 		State s = new State();
 		s.printBoard();
 
-		//dfs(s);
-		//bfs(s);
-
 		final Function<Node, Double> heuristic1 = (state) -> {
 			double ret = state.depth;
 			for(int i = 0; i <  state.state.mice.size(); i++) {
@@ -47,6 +44,7 @@ public class A1 {
 			}
 			return ret;
 		};
+		
 		final Function<Node, Double> heuristic2 = (state) -> {
 			double ret = state.depth;
 			for(int i = 0; i <  state.state.mice.size(); i++) {
@@ -77,15 +75,11 @@ public class A1 {
 		final Function<Node, Double> heuristic3 = (state) -> {
 			return (heuristic1.apply(state) + heuristic2.apply(state))/2.0;
 		};
-		//
-		//
-		//Astar(s, heuristic1);
-		//Astar(s, heuristic2);
-		//Astar(s, heuristic3);
 
 		//doA((state) -> dfs(state), s);
-		doA((state) -> bfs(state), s);
-		//doA((state) -> Astar(state, heuristic2), s);
+		//doA((state) -> bfs(state), s);
+		//doA((state) -> ids(state), s);
+		doA((state) -> Astar(state, heuristic3), s);
 	}
 
 	private static Node dfs(State original) {
@@ -99,17 +93,17 @@ public class A1 {
 		while(!states.isEmpty()) {
 			Node e = states.pop();
 			i++;
+			if(e.state.goal()) {
+				e.state.printBoard();
+				e.state.printMoves();
+				System.out.println("Complete, expanded: " + i);
+				return e;
+			}
 			visited.add(e.state);
 			List<Move> moves = e.state.possibleMoves();
 			for(Move m: moves) {
 				State newState = e.state.performMove(m);
 				Node post = new Node(newState, e);
-				if(post.state.goal()) {
-					post.state.printBoard();
-					post.state.printMoves();
-					System.out.println("Complete, expanded: " + i);
-					return post;
-				}
 				if(!visited.contains(newState)) {
 					states.push(post);	
 				}
@@ -117,6 +111,44 @@ public class A1 {
 		}
 
 		System.out.println("No possible solutions, expanded: " + i);
+		return null;
+	}
+	
+
+	private static Node ids(State original) {
+		final int MAX = 20;
+		int expanded = 0;
+		for(int i = 1; i < MAX; i++) {
+			Stack<Node> states = new Stack<>();
+			Set<State> visited = new HashSet<>();
+			expanded++;
+			states.add(new Node(original, null));
+			visited.add(original);
+			
+			while(!states.isEmpty()) {
+				Node e = states.pop();
+				visited.add(e.state);
+				List<Move> moves = e.state.possibleMoves();
+				if(e.state.goal()) {
+					e.state.printBoard();
+					e.state.printMoves();
+					System.out.println("Complete, expanded: " + expanded);
+					return e;
+				}
+				if(e.depth == i) {
+					continue;
+				}
+				for(Move m: moves) {
+					State newState = e.state.performMove(m);
+					Node post = new Node(newState, e);
+					if(!visited.contains(newState)) {
+						states.push(post);	
+					}
+				}
+			}
+		}
+
+		System.out.println("No possible solutions in depth of " + MAX);
 		return null;
 	}
 
@@ -132,17 +164,17 @@ public class A1 {
 		while(!states.isEmpty()) {
 			Node e = states.poll();
 			i++;
+			if(e.state.goal()) {
+				e.state.printBoard();
+				e.state.printMoves();
+				System.out.println("Complete, expanded: " + i);
+				return e;
+			}
 			visited.add(e.state);
 			List<Move> moves = e.state.possibleMoves();
 			for(Move m: moves) {
 				State newState = e.state.performMove(m);
 				Node post = new Node(newState, e);
-				if(post.state.goal()) {
-					post.state.printBoard();
-					post.state.printMoves();
-					System.out.println("Complete, expanded: " + i);
-					return post;
-				}
 				if(!visited.contains(newState)) {
 					states.add(post);	
 				}
