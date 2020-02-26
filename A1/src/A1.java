@@ -15,7 +15,7 @@ import java.util.stream.IntStream;
 
 public class A1 {
 
-	
+
 	public static void doA(Function<State, Node> a, State t) {
 
 		Node finalState = a.apply(t);
@@ -30,7 +30,7 @@ public class A1 {
 	}
 
 	public static void main(String[] args) {
-		
+
 		State s = new State();
 		s.printBoard();
 
@@ -44,7 +44,7 @@ public class A1 {
 			}
 			return ret;
 		};
-		
+
 		final Function<Node, Double> heuristic2 = (state) -> {
 			double ret = state.depth;
 			for(int i = 0; i <  state.state.mice.size(); i++) {
@@ -76,10 +76,10 @@ public class A1 {
 			return (heuristic1.apply(state) + heuristic2.apply(state))/2.0;
 		};
 
-		//doA((state) -> dfs(state), s);
+		doA((state) -> dfs(state), s);
 		//doA((state) -> bfs(state), s);
 		//doA((state) -> ids(state), s);
-		doA((state) -> Astar(state, heuristic3), s);
+		//doA((state) -> Astar(state, heuristic2), s);
 	}
 
 	private static Node dfs(State original) {
@@ -113,7 +113,7 @@ public class A1 {
 		System.out.println("No possible solutions, expanded: " + i);
 		return null;
 	}
-	
+
 
 	private static Node ids(State original) {
 		final int MAX = 20;
@@ -124,7 +124,7 @@ public class A1 {
 			expanded++;
 			states.add(new Node(original, null));
 			visited.add(original);
-			
+
 			while(!states.isEmpty()) {
 				Node e = states.pop();
 				visited.add(e.state);
@@ -306,17 +306,17 @@ public class A1 {
 				generateUnique(cheese, N_CHEESE);
 				generateUnique(mice, N_MOUSE);
 			} else {
-				//cats.add(new Tuple(2,6));
-				//mice.add(new Tuple(7,1));
-				//cheese.add(new Tuple(9,1));
-				//cheese.add(new Tuple(9,6));
-				//cheese.add(new Tuple(6,10));
-				
-				cats.add(new Tuple(5, 1));
-				mice.add(new Tuple(7, 1));
-				cheese.add(new Tuple(0, 0));
-				cheese.add(new Tuple(8,7));
-				cheese.add(new Tuple(10,7));
+				cats.add(new Tuple(2,6));
+				mice.add(new Tuple(7,1));
+				cheese.add(new Tuple(9,1));
+				cheese.add(new Tuple(9,6));
+				cheese.add(new Tuple(6,10));
+
+				//				cats.add(new Tuple(5, 1));
+				//				mice.add(new Tuple(7, 1));
+				//				cheese.add(new Tuple(0, 0));
+				//				cheese.add(new Tuple(8,7));
+				//				cheese.add(new Tuple(10,7));
 			}
 		}
 
@@ -610,7 +610,7 @@ How many nodes are searched for each of the searches on average with respective 
 	b: branching factor, d: depth of least cost solution, m: max depth
 	DFS O(b^m)
 	BFS O(b^(d+1))
-	A* O(d)
+	A* O(d) / exponential
 What is the average number of moves required for each type of search with respective deviation. (BFS, DFS, and A* )
 	DFS between m and d
 	BFS d
