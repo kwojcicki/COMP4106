@@ -1,4 +1,5 @@
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -91,6 +92,10 @@ public class A1 {
 		//doA((state) -> Astar(state, heuristic3), s);
 	}
 
+	public void longestCommonPrefix(String[] strs) {
+		boolean done = Arrays.stream(strs).anyMatch(i -> i.length() > 0);
+	}
+	
 	private static Node dfs(State original) {
 		Stack<Node> states = new Stack<>();
 		Set<State> visited = new HashSet<>();
