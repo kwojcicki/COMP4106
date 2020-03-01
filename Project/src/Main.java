@@ -6,10 +6,13 @@ import java.util.Random;
 public class Main {
 
 	static Random r = new Random();
-	static final int MAX_ITERS = 100;
-	static final int POPULATION_SIZE = 100;
-	static final int WEIGHTS = 19;
+	static final int MAX_ITERS = 1000;
+	static final int POPULATION_SIZE = 200;
+	static final int WEIGHTS = 20;
 	static final int TOP_K = 10;
+	static final int PERCENTAGE = 90;
+	static final int GAMES_TO_EVALUTE = 1000;
+	
 	public static void main(String[] args) {
 		
 		
@@ -18,22 +21,88 @@ public class Main {
 			populations[i] = r.ints(WEIGHTS, 0, 2).toArray();
 		}
 		
-		
 		for(int i = 0; i < MAX_ITERS; i++) {
 			PriorityQueue<Tuple<int[], Double>> q = new PriorityQueue<>();
+			double averageFitness = 0;
 			
 			for(int[] population: populations) {
 				Player dealer = new Dealer();
 				Player player = new Agent(population);
-				q.add(new Tuple<>(population, Game.playGame(dealer, player)));	
+				double score = Game.playGame(dealer, player, GAMES_TO_EVALUTE, false);
+				averageFitness += score;
+				q.add(new Tuple<>(population, score));	
 			}
 			
-			for(int k = 0; i < TOP_K; i++) {
-				
+			System.out.println("Generation: " + i + " average fitness " + (averageFitness/POPULATION_SIZE));
+			
+			if(i == MAX_ITERS - 1) {
+				observe(q.peek().key);
+				break;
+			}
+			
+			int[][] matingPool = new int[TOP_K][WEIGHTS];
+			for(int k = 0; k < TOP_K; k++) {
+				matingPool[k] = q.poll().key;
+			}
+			
+			populations = crossoverAndMutate(matingPool);
+			
+		}
+	}
+	
+	public static void observe(int[] population) {
+		Player dealer = new Dealer();
+		Player player = new Agent(population);
+		Game.playGame(dealer, player, 10, true);
+	}
+	
+	public static int[] crossover(int[] p1, int[] p2) {
+		int[] result = new int[p1.length];
+		
+		int splitPoint = Deck.getRandomNumberInRange(0, p1.length - 1);
+		for(int i = 0; i < p1.length; i++) {
+			if(i > splitPoint) {
+				result[i] = p1[i]; 
+			} else {
+				result[i] = p2[i];
 			}
 		}
 		
+		return result;
 	}
+	
+	public static void mutate(int[] population) {
+		for(int i = 0; i < population.length; i++) {
+			if(Deck.getRandomNumberInRange(1, 100) > PERCENTAGE) {
+				population[i] = 1 - population[i];
+			}
+		}
+	}
+	
+	public static int[][] crossoverAndMutate(int[][] matingPool){
+		int[][] populations = new int[POPULATION_SIZE][WEIGHTS];
+		
+		for(int i = 0; i < matingPool.length; i++) {
+			populations[i] = matingPool[i];
+		}
+		
+		for(int i = matingPool.length; i < POPULATION_SIZE; i++) {
+			int p1 = 0, p2 = 0;
+			while(p1 == p2) {
+				p1 = Deck.getRandomNumberInRange(0, matingPool.length - 1);
+				p2 = Deck.getRandomNumberInRange(0, matingPool.length - 1);
+			}
+			
+			int[] child = crossover(matingPool[p1], matingPool[p2]);
+			mutate(child);
+			
+			populations[i] = child;
+			
+		}
+		
+		return populations;
+	}
+	
 }
 
 class Tuple<K, V extends Comparable<V>> implements Comparable<Tuple<K, V>>{
@@ -53,10 +122,17 @@ class Tuple<K, V extends Comparable<V>> implements Comparable<Tuple<K, V>>{
 
 class Game {
 	
-	public static double playGame(Player dealer, Player player) {
+	public static void print(String s, boolean debug) {
+		if(debug) {
+			System.out.println(s);
+		}
+	}
+	
+	public static double playGame(Player dealer, Player player, int gamesToPlay, boolean debug) {
 		int won = 0, tied = 0, lost = 0;
 		Deck deck = new Deck();
-		OUTER_LOOP: for(int i = 0; i < 1; i++) {
+		OUTER_LOOP: for(int i = 0; i < gamesToPlay; i++) {
+			print("--------", debug);
 			deck.resetDeck();
 			player.cards.clear(); dealer.cards.clear();
 			
@@ -66,26 +142,35 @@ class Game {
 			player.cards.add(deck.getCard());
 			player.cards.add(deck.getCard());
 			
+			print("Player: " + player.toString(), debug);
+			print("Dealer: " + dealer.toString(), debug);
+			
 			if(player.total() > 21) {
 				lost++;
+				print("Player score over 21", debug);
 				continue;
-			} else if(player.total() == 21) {
+			} else if(player.total() == 21 && dealer.total() != 21) {
 				won++;
+				print("Player score equal to 21", debug);
 				continue;
 			}
 			
 			while(player.hit()) {
 				player.cards.add(deck.getCard());
+				print("Player hit:" + player.toString(), debug);
 				if(player.total() > 21) {
 					lost++;
+					print("Player score over 21", debug);
 					continue OUTER_LOOP;
 				}
 			}
 			
 			while(dealer.hit()) {
 				dealer.cards.add(deck.getCard());
+				print("Dealer hit:" + dealer.toString(), debug);
 				if(dealer.total() > 21) {
 					won++;
+					print("Dealer score over 21", debug);
 					continue OUTER_LOOP;
 				}
 			}
@@ -99,8 +184,8 @@ class Game {
 			}
 		}
 		
-		System.out.println("Won: " + won + " Lost: " + lost + " Tied: " + tied + " Out of total: " + (won + lost + tied));
-		return (lost / (double)(won + lost + tied));
+		//System.out.println("Won: " + won + " Lost: " + lost + " Tied: " + tied + " Out of total: " + (won + lost + tied));
+		return (won / (double)(won + lost + tied));
 	}
 }
 
@@ -111,8 +196,13 @@ class Agent extends Player{
 		this.weights = weights;
 	}
 	
-	public boolean hit() {
-		return weights[total() - 2] == 1;
+	public boolean hit() { 
+		try {
+			return weights[total() - 2] == 1;
+		} catch(Exception e) {
+			System.out.println(this.toString());
+		}
+		throw new RuntimeException();
 	}
 }
 
@@ -122,7 +212,7 @@ abstract class Player {
 	
 	@Override
 	public String toString() {
-		return cards.toString();
+		return cards.toString() + " " + total();
 	}
 	
 	public int total() {
@@ -141,7 +231,7 @@ class Deck {
 		return cards.remove(getRandomNumberInRange(0, cards.size() - 1));
 	}
 	
-	private static int getRandomNumberInRange(int min, int max) {
+	public static int getRandomNumberInRange(int min, int max) {
 		return Main.r.ints(min, (max + 1)).findFirst().getAsInt();
 
 	}
