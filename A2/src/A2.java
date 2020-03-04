@@ -1,5 +1,4 @@
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -8,15 +7,15 @@ import java.util.Map.Entry;
 import java.util.Scanner;
 import java.util.Set;
 import java.util.function.Function;
-
-import javax.management.RuntimeErrorException;
+import java.util.stream.IntStream;
 
 public class A2 {
 
 
 	public static final int N_s = 4;
-	public static final int ALLOWED_DEPTH = 5;
+	public static final int ALLOWED_DEPTH = 4;
 	public static final boolean HUMAN_PLAYER = false;
+	public static final boolean ALPHA_BETA = true;
 
 	public static Set<Tuple> validBlue = new HashSet<>();
 	public static Set<Tuple> mancalaBlue = new HashSet<>();
@@ -27,9 +26,7 @@ public class A2 {
 	public static Map<Tuple, Tuple> stoneOrderCCW = new HashMap<>();
 	public static Map<Tuple, Tuple> stoneOrderCW = new HashMap<>();
 
-	//public static Map<State, Integer> maxValues = new HashMap<>();
-	//public static Map<State, Integer> minValues = new HashMap<>();
-	public static Map<State, List<State>> expanded = new HashMap<>();
+	public static Map<State, Set<State>> expanded = new HashMap<>();
 
 	static {
 		stoneOrderCCW.put(new Tuple(3, 0), new Tuple(3, 1));
@@ -122,8 +119,8 @@ public class A2 {
 	public static void main(String[] args) throws InterruptedException {
 		Scanner in = new Scanner(System.in);
 		State s = new State();
-		Player p = new Player(1);
-		Player p1 = new Player(1);
+		Player p = new Player(3);
+		Player p1 = new Player(4);
 
 		while(true) {
 			s.printBoard();
@@ -175,16 +172,30 @@ public class A2 {
 	static class Player {
 
 		private final int HEURISTIC;
-
+		private int expanded = 0;
+		
 		public Player(final int h) {
-			this.HEURISTIC = h;			
+			this.HEURISTIC = h;
 		}
 
 		final Function<State, Integer> heuristic1 = (state) -> {
 			return mancalaRed.stream().mapToInt(i -> state.stones.get(i.x + i.y * 8)).sum();
 		};
+		
+		final Function<State, Integer> heuristic2 = (state) -> {
+			return mancalaBlue.stream().mapToInt(i -> state.stones.get(i.x + i.y * 8)).sum();
+		};
 
+		final Function<State, Integer> heuristic3 = (state) -> {
+			return validRed.stream().mapToInt(i -> state.stones.get(i.x + i.y * 8)).sum();
+		};
+		
+		final Function<State, Integer> heuristic4 = (state) -> {
+			return validBlue.stream().mapToInt(i -> state.stones.get(i.x + i.y * 8)).sum();
+		};
+		
 		private State computerPlay(State initialState) {
+			this.expanded = 0;
 			KeyPair<Integer, State> best = maxValue(new State(initialState, initialState.redTurn), Integer.MIN_VALUE, Integer.MAX_VALUE, 1);
 			System.out.println("best: " + best.key);
 			//			for(State s: initialState.generateMoves()) {
@@ -192,7 +203,7 @@ public class A2 {
 			//					return s;
 			//				}
 			//			}
-
+			System.out.println("Expanded: " + this.expanded);
 			return best.value;
 		}
 
@@ -202,13 +213,14 @@ public class A2 {
 			}
 			int bestValue = Integer.MIN_VALUE;
 			State bestState = null;
-			List<State> possibleMoves = state.generateMoves();
+			Set<State> possibleMoves = state.generateMoves();
 			//int possibleMovesSize = possibleMoves.size();
 			//if(possibleMovesSize > 10000) {
 			//state.generateMoves();	
 			//}
 			for(State node : possibleMoves){
 				KeyPair<Integer, State> mv;
+				this.expanded++;
 				//if(minValues.containsKey(node)) {
 				//	        		mv = new KeyPair<>(minValues.get(node), node); 
 				//} else {
@@ -221,7 +233,7 @@ public class A2 {
 					bestState = node;
 				}
 
-				if(bestValue >= beta) {
+				if(ALPHA_BETA && bestValue >= beta) {
 					break;
 				}
 				alpha = Math.max(alpha, bestValue);
@@ -233,6 +245,12 @@ public class A2 {
 			int heuristicValue = -1;
 			if(HEURISTIC == 1) {
 				heuristicValue = heuristic1.apply(state);	
+			} else if(HEURISTIC == 2) {
+				heuristicValue = heuristic2.apply(state);	
+			} else if(HEURISTIC == 3) {
+				heuristicValue = heuristic3.apply(state);	
+			} else if(HEURISTIC == 4) {
+				heuristicValue = heuristic4.apply(state);	
 			}
 
 			return heuristicValue;
@@ -246,20 +264,21 @@ public class A2 {
 			int bestValue = Integer.MAX_VALUE;
 			State bestState = null;
 
-			List<State> possibleMoves = state.generateMoves();
+			Set<State> possibleMoves = state.generateMoves();
 			for(State node : possibleMoves){
 				KeyPair<Integer, State> mv;
 				//if(maxValues.containsKey(node)) {
-//					mv = new KeyPair<>(maxValues.get(node), node); 
+				//					mv = new KeyPair<>(maxValues.get(node), node); 
 				//} else {
-					mv = maxValue(node, alpha, beta, currDepth + 1);
-//					maxValues.put(node, mv.key);
+				mv = maxValue(node, alpha, beta, currDepth + 1);
+				this.expanded++;
+				//					maxValues.put(node, mv.key);
 				//}
 				if(bestValue > mv.key) {
 					bestValue = mv.key;
 					bestState = node;
 				}
-				if(bestValue <= alpha) {
+				if(ALPHA_BETA && bestValue <= alpha) {
 					break;
 				}
 				beta = Math.min(beta, bestValue);
@@ -295,28 +314,28 @@ public class A2 {
 		List<Integer> stones = new ArrayList<>();
 
 		public State() {
-			//			IntStream.range(0, 8 * 8).forEach(i -> {				
-			//				Tuple p = new Tuple(i % 8, i / 8);
-			//				if( (validBlue.contains(p) && !mancalaBlue.contains(p))  ||
-			//						(validRed.contains(p) && !mancalaRed.contains(p))) {
-			//					stones.add(N_s);
-			//				} else {
-			//					stones.add(0);
-			//				}
-			//
-			//			});
+			IntStream.range(0, 8 * 8).forEach(i -> {				
+				Tuple p = new Tuple(i % 8, i / 8);
+				if( (validBlue.contains(p) && !mancalaBlue.contains(p))  ||
+						(validRed.contains(p) && !mancalaRed.contains(p))) {
+					stones.add(N_s);
+				} else {
+					stones.add(0);
+				}
+
+			});
 
 			//stones.add(e)
-			List<Integer> x = Arrays.asList(0,0,0,2,0,0,0,0,
-					0,0,0,0,0,0,0,0,
-					0,0,0,8,0,0,0,0,
-					0,0,1,8,6,6,7,4,
-					2,6,6,1,0,0,0,0,
-					0,0,0,2,5,0,0,0,
-					0,0,0,7,7,0,0,0, 
-					0,0,0,0,2,0,0,0);
-
-			x.stream().forEach(i -> stones.add(i));
+			//			List<Integer> x = Arrays.asList(0,0,0,2,0,0,0,0,
+			//					0,0,0,0,0,0,0,0,
+			//					0,0,0,8,0,0,0,0,
+			//					0,0,1,8,6,6,7,4,
+			//					2,6,6,1,0,0,0,0,
+			//					0,0,0,2,5,0,0,0,
+			//					0,0,0,7,7,0,0,0, 
+			//					0,0,0,0,2,0,0,0);
+			//
+			//			x.stream().forEach(i -> stones.add(i));
 		}
 
 		public boolean goal() {
@@ -338,9 +357,6 @@ public class A2 {
 		public State(State s, boolean redTurn) {
 			this.redTurn = redTurn;
 			s.stones.forEach(i -> this.stones.add(i));
-			if(this.stones.size() != 64) {
-				throw new RuntimeErrorException(null, "Error");
-			}
 		}
 
 		public final Tuple nextPosition(final Tuple prev, boolean ccw) {
@@ -390,19 +406,19 @@ public class A2 {
 			}
 
 			int increase = 0;
-			if(!mancala(new Tuple(pos.x + 1, pos.y))) {
+			if(!mancala(new Tuple(pos.x + 1, pos.y)) && pos.x + 1 + pos.y * 8 < 64 && pos.x + 1 + pos.y * 8 >= 0) {
 				increase += newState.stones.get(pos.x + 1 + pos.y * 8);	
 				newState.stones.set(pos.x + 1 + pos.y * 8, 0);
 			}
-			if(!mancala(new Tuple(pos.x, pos.y + 1))) {
+			if(!mancala(new Tuple(pos.x, pos.y + 1)) && pos.x + (pos.y + 1) * 8 < 64 && pos.x + (pos.y + 1) * 8 >= 0) {
 				increase += newState.stones.get(pos.x + (pos.y + 1) * 8);
 				newState.stones.set(pos.x + (pos.y + 1) * 8, 0);
 			}
-			if(!mancala(new Tuple(pos.x - 1, pos.y))) {
+			if(!mancala(new Tuple(pos.x - 1, pos.y)) && pos.x - 1 + pos.y * 8 < 64 && pos.x - 1 + pos.y * 8 >= 0) {
 				increase += newState.stones.get(pos.x - 1 + pos.y * 8);
 				newState.stones.set(pos.x - 1 + pos.y * 8, 0);
 			}
-			if(!mancala(new Tuple(pos.x, pos.y - 1))) {
+			if(!mancala(new Tuple(pos.x, pos.y - 1)) && pos.x + (pos.y - 1) * 8 < 64 && pos.x + (pos.y - 1) * 8 >= 0) {
 				increase += newState.stones.get(pos.x + (pos.y - 1) * 8);
 				newState.stones.set(pos.x + (pos.y - 1) * 8, 0);
 			}
@@ -428,8 +444,8 @@ public class A2 {
 			return newStates;
 		}
 
-		public List<State> generateMoves() {
-			List<State> newStates = new ArrayList<>();
+		public Set<State> generateMoves() {
+			Set<State> newStates = new HashSet<>();
 
 			Set<Tuple> stonesToUse = validBlue;
 			if(redTurn) {
@@ -457,19 +473,22 @@ public class A2 {
 				newStates.addAll(performMove(new Move(position.x, position.y, 0, true, false)));
 				newStates.addAll(performMove(new Move(position.x, position.y, 0, false, false)));
 				
-				newStates.addAll(performMove(new Move(position.x, position.y, 0, true, true)));
-				newStates.addAll(performMove(new Move(position.x, position.y, 1, true, true)));
-				newStates.addAll(performMove(new Move(position.x, position.y, 2, true, true)));
-				newStates.addAll(performMove(new Move(position.x, position.y, 3, true, true)));
+				if(ALPHA_BETA) {
+					newStates.addAll(performMove(new Move(position.x, position.y, 0, true, true)));
+					newStates.addAll(performMove(new Move(position.x, position.y, 1, true, true)));
+					newStates.addAll(performMove(new Move(position.x, position.y, 2, true, true)));
+					newStates.addAll(performMove(new Move(position.x, position.y, 3, true, true)));
+
+					newStates.addAll(performMove(new Move(position.x, position.y, 0, false, true)));
+					newStates.addAll(performMove(new Move(position.x, position.y, 1, false, true)));
+					newStates.addAll(performMove(new Move(position.x, position.y, 2, false, true)));
+					newStates.addAll(performMove(new Move(position.x, position.y, 3, false, true)));
+				}
 				
-				newStates.addAll(performMove(new Move(position.x, position.y, 0, false, true)));
-				newStates.addAll(performMove(new Move(position.x, position.y, 1, false, true)));
-				newStates.addAll(performMove(new Move(position.x, position.y, 2, false, true)));
-				newStates.addAll(performMove(new Move(position.x, position.y, 3, false, true)));
 			}
-			
+
 			expanded.put(this, newStates);
-			
+
 			return newStates;
 		}
 
