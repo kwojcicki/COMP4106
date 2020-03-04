@@ -76,11 +76,20 @@ public class A1 {
 		final Function<Node, Double> heuristic3 = (state) -> {
 			return (heuristic1.apply(state) + heuristic2.apply(state))/2.0;
 		};
-
-		doA((state) -> dfs(state), s);
-		//doA((state) -> bfs(state), s);
-		//doA((state) -> ids(state), s);
+//
+//		System.out.println("DFS");
+//		doA((state) -> dfs(state), s);
+//		System.out.println("BFS");
+//		doA((state) -> bfs(state), s);
+//		System.out.println("IDS");
+		doA((state) -> ids(state), s);
+//		System.out.println("A* 1");
+//		doA((state) -> Astar(state, heuristic1), s);
+		//System.out.println("A* 2");
 		//doA((state) -> Astar(state, heuristic2), s);
+		//doA((state) -> Astar(state, heuristic2), s);
+		//System.out.println("A* 3");
+		//doA((state) -> Astar(state, heuristic3), s);
 	}
 
 	public void longestCommonPrefix(String[] strs) {
@@ -126,7 +135,6 @@ public class A1 {
 		for(int i = 1; i < MAX; i++) {
 			Stack<Node> states = new Stack<>();
 			Set<State> visited = new HashSet<>();
-			expanded++;
 			states.add(new Node(original, null));
 			visited.add(original);
 
@@ -140,9 +148,10 @@ public class A1 {
 					System.out.println("Complete, expanded: " + expanded);
 					return e;
 				}
-				if(e.depth == i) {
+				if(e.depth >= i) {
 					continue;
 				}
+				expanded++;
 				for(Move m: moves) {
 					State newState = e.state.performMove(m);
 					Node post = new Node(newState, e);
@@ -261,8 +270,8 @@ public class A1 {
 
 		private static final int BOARD_SIZE = 12; // 12, 30, 50
 		private static final boolean RANDOMIZE = true;
-		private static final int N_CATS = 1;
-		private static final int N_MOUSE = 1;
+		private static final int N_CATS = 3;
+		private static final int N_MOUSE = 3;
 		private static final int N_CHEESE = 3;
 		private static final int MOUSE_MOVE = 1;
 		private List<Move> moves = new ArrayList<>(38);
