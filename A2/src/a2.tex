@@ -1,0 +1,40 @@
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{algorithm}
+\usepackage{float}
+\usepackage{color}
+\usepackage{multicol}
+\usepackage{forloop}
+\usepackage{graphicx}
+\usepackage[margin=0.8in]{geometry}
+\usepackage{caption}
+\usepackage{enumerate}
+
+\graphicspath{ {.} }
+\title{COMP 4106\\
+	\large{Assignment 2, Variation of Mancala}}
+\author{Krystian Wojcicki, 101001444}
+\date{Winter 2020}
+
+\begin{document}
+\maketitle
+
+\section{State Space}
+The state space for the Mancala game was quite small consisting of a Boolean to indicate whose turn it was, as well as a list of integers representing the number of stones in a given hole. The list was a 2 dimensional array compressed or concatenated together, ie the first 8 indices correspond to the number of stones in the first 8 holes.  The game was over when either players had no stones on their side (excluding their Mancala) and this could be checked by iterating over the list of integers.
+
+\section{Heuristics}
+
+The two heuristics chosen were relatively intuitive and simple. Revolving around having the most number of stones in ones holes.
+
+\subsection{Heuristic One}
+
+The first heuristic tries to maximize the number of stones in ones mancala. The reason being one cannot easily steal the stones from ones mancala, one can only take 1 stone away from the opponents mancala at a time. So if one has a large number of stones in ones mancala the opponent is unlikely to be able to steal them all away and once the game is done the player will have lots of stones in their mancala to count towards their score.
+
+\subsection{Heuristic Two}
+
+The second heuristic utilizes a similar approach to heuristic one, but instead of just counting the number of stones in ones mancala it counts all the stones on a persons side. This is because at the end of the game the score consists of all stones on ones side and this heuristic tries to maximize that. Unfortunately having lots of stones on ones side is not always the best as the opponent can steal them away.
+
+\section{Node Count}
+The Node Count for the two heuristics were relatively the same, however there was a large difference in the Node Count between MiniMax when utilizing Alpha-Beta pruning and when not utilizing Alpha-Beta pruning. While the exact reduction in Node Count is heavily reliant on the move order produced by the production system, a noticeable difference in the Node Count can be seen.
+\end{document}
