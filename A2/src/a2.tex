@@ -36,5 +36,5 @@ The first heuristic tries to maximize the number of stones in ones mancala. The 
 The second heuristic utilizes a similar approach to heuristic one, but instead of just counting the number of stones in ones mancala it counts all the stones on a persons side. This is because at the end of the game the score consists of all stones on ones side and this heuristic tries to maximize that. Unfortunately having lots of stones on ones side is not always the best as the opponent can steal them away.
 
 \section{Node Count}
-The Node Count for the two heuristics were relatively the same, however there was a large difference in the Node Count between MiniMax when utilizing Alpha-Beta pruning and when not utilizing Alpha-Beta pruning. While the exact reduction in Node Count is heavily reliant on the move order produced by the production system, a noticeable difference in the Node Count can be seen.
+The Node Count for the two heuristics were relatively the same, however there was a large difference in the Node Count between MiniMax when utilizing Alpha-Beta pruning and when not utilizing Alpha-Beta pruning. While the exact reduction in Node Count is heavily reliant on the move order produced by the production system, a noticeable difference in the Node Count can be seen often the node count was decreased by over 50\%.
 \end{document}
